@@ -1098,56 +1098,55 @@
 
 
     .detail-box {
-
       background: #f9fafb;
-
       padding: 16px 20px;
-
       border-radius: 14px;
-
       border-left: 4px solid var(--accent-green);
-
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
+    .detail-box:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
 
+    .detail-box.full-width {
+      grid-column: 1 / -1;
+    }
 
     .detail-box strong {
-
-      display: block;
-
-      color: var(--text-muted);
-
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary-medium);
       font-size: 0.85rem;
-
       font-weight: 700;
-
       text-transform: uppercase;
-
       letter-spacing: 0.5px;
-
-      margin-bottom: 6px;
-
+      margin-bottom: 8px;
     }
 
-
+    .detail-box strong i {
+      color: var(--accent-green);
+      font-size: 0.95rem;
+    }
 
     .detail-box span {
-
       color: var(--text-main);
-
-      font-size: 1rem;
-
+      font-size: 0.96rem;
       font-weight: 500;
-
-      line-height: 1.5;
-
-      word-break: break-all;
-
+      line-height: 1.6;
+      word-break: break-word;
+      overflow-wrap: break-word;
+      display: block;
     }
 
-
+    .plant-summary-subtitle {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-top: 3px;
+    }
 
     /* Table View Styles */
 
@@ -2491,212 +2490,187 @@
 
 
 
-    // Helper function to extract specific plant fields from Excel row dynamically
-
+    // Helper function to extract specific plant fields from Excel / CSV row dynamically
     function getFieldValue(row, possibleKeys) {
-
-      const foundKey = Object.keys(row).find(k =>
-
-        possibleKeys.some(pk => k.toLowerCase().trim().includes(pk.toLowerCase()))
-
-      );
-
-      return foundKey ? row[foundKey] : null;
-
+      if (!row) return null;
+      // 1. Try exact case-insensitive match first
+      for (const pk of possibleKeys) {
+        const exactKey = Object.keys(row).find(k => k.trim().toLowerCase() === pk.trim().toLowerCase());
+        if (exactKey && row[exactKey] !== undefined && row[exactKey] !== null && String(row[exactKey]).trim() !== '') {
+          return String(row[exactKey]).trim();
+        }
+      }
+      // 2. Try substring match
+      for (const pk of possibleKeys) {
+        const subKey = Object.keys(row).find(k => k.trim().toLowerCase().includes(pk.trim().toLowerCase()));
+        if (subKey && row[subKey] !== undefined && row[subKey] !== null && String(row[subKey]).trim() !== '') {
+          return String(row[subKey]).trim();
+        }
+      }
+      return null;
     }
 
-
-
     // 3. Render Search Output to both Views
-
     function displayResults(results) {
-
       const resultsCard = document.getElementById('resultsCard');
-
       const detailedContainer = document.getElementById('detailedViewContainer');
-
       const tableHeader = document.getElementById('tableHeader');
-
       const tableBody = document.getElementById('tableBody');
-
       const verdictBanner = document.getElementById('resultsVerdictBanner');
 
-
-
       detailedContainer.innerHTML = "";
-
       tableHeader.innerHTML = "";
-
       tableBody.innerHTML = "";
 
-
-
       if (results.length === 0) {
-
         resultsCard.style.display = "block";
-
         detailedContainer.innerHTML = "<p style='text-align:center; padding: 1rem;'>No matching records found.</p>";
-
         tableBody.innerHTML = "<tr><td colspan='100%' style='text-align:center;'>No matching records found.</td></tr>";
-
         verdictBanner.style.display = "none";
-
         return;
-
       }
-
-
 
       // 6. Result Verdict Banner
-
       const topHit = results[0];
-
       if (topHit._eValue !== undefined && topHit._eValue !== Infinity) {
-
         let verdictHtml = '';
-
-        const pName = getFieldValue(topHit, ['name', 'plant', 'species', 'නම්']) || 'Unknown Plant';
-
+        const pName = getFieldValue(topHit, ['Scientific Name', 'scientific name', 'name', 'ශාකයේ නම']) || 'Unknown Plant';
         const formattedEValue = topHit._eValue === 0 ? "0.0" : topHit._eValue.toExponential(2);
 
-
-
         if (topHit._eValue < 1e-30) {
-
           verdictHtml = `<div style="background:#ecfdf5; color:#065f46; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #34d399;"><i class="fa-solid fa-circle-check" style="margin-right:8px;"></i> <strong>Confirmed Match:</strong> Top hit is <u>${pName}</u> with high statistical confidence (E-value: ${formattedEValue}).</div>`;
-
         } else if (topHit._eValue < 1e-10) {
-
           verdictHtml = `<div style="background:#fffbeb; color:#92400e; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #fbbf24;"><i class="fa-solid fa-circle-exclamation" style="margin-right:8px;"></i> <strong>Probable Match:</strong> Top hit is <u>${pName}</u> but with moderate confidence (E-value: ${formattedEValue}).</div>`;
-
         } else {
-
           verdictHtml = `<div style="background:#fef2f2; color:#991b1b; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #f87171;"><i class="fa-solid fa-circle-xmark" style="margin-right:8px;"></i> <strong>No Significant Match:</strong> Matches found are statistically weak (E-value > 1e-10) and likely random noise.</div>`;
-
         }
-
         verdictBanner.innerHTML = verdictHtml;
-
         verdictBanner.style.display = "block";
-
       } else {
-
         verdictBanner.style.display = "none";
-
       }
 
-
-
       // --- Render Detailed View Cards ---
-
       results.forEach((row, idx) => {
+        // Extract all requested detailed fields
+        const scientificName  = getFieldValue(row, ['Scientific Name', 'scientific name', 'name', 'ශාකයේ නම']) || 'Unknown Plant';
+        const commonName      = getFieldValue(row, ['Common Name', 'common name', 'local name', 'පොදු නම']) || 'N/A';
+        const family          = getFieldValue(row, ['Family', 'family', 'කුලය']) || 'N/A';
+        const species         = getFieldValue(row, ['Species', 'species', 'විශේෂය']) || 'N/A';
+        const plantType       = getFieldValue(row, ['Plant Type / Growth Form', 'plant type / growth form', 'Plant Type', 'Growth Form', 'type']) || 'N/A';
+        const description     = getFieldValue(row, ['Plant Description', 'plant description', 'description', 'wisthara', 'විස්තර']) || 'N/A';
+        const morphology      = getFieldValue(row, ['Morphological Features', 'morphological features', 'morphology']) || 'N/A';
+        const distribution    = getFieldValue(row, ['Distribution', 'distribution', 'regional name', 'pradeshaya', 'ව්‍යාප්තිය']) || 'N/A';
+        const habitat         = getFieldValue(row, ['Habitat', 'habitat', 'වාසස්ථාන']) || 'N/A';
+        const climateSoil     = getFieldValue(row, ['Climate & Soil Requirements', 'climate & soil requirements', 'climate & soil', 'climate', 'soil']) || 'N/A';
+        const uses            = getFieldValue(row, ['Uses', 'uses', 'commercial', 'economic', 'වාණිජ']) || 'N/A';
+        const traditionalUses = getFieldValue(row, ['Traditional Uses (Sri Lanka)', 'traditional uses (sri lanka)', 'traditional uses', 'traditional']) || 'N/A';
+        const phytochemicals  = getFieldValue(row, ['Key Phytochemicals', 'key phytochemicals', 'phytochemicals']) || 'N/A';
+        const identityVal     = getFieldValue(row, ['identity']) || '';
 
-        const plantName = getFieldValue(row, ['name', 'plant', 'species', 'නම්']) || 'Unknown Plant';
-
-        const description = getFieldValue(row, ['description', 'wisthara', 'details', 'විස්තර']) || 'N/A';
-
-        const regionalNames = getFieldValue(row, ['regional name', 'pradeshaya', 'local name', 'ප්‍රදේශ']) || 'N/A';
-
-        const plantType = getFieldValue(row, ['type', 'flower', 'sapushpa', 'category', 'සපුෂ්ප']) || 'N/A';
-
-        const commercialValue = getFieldValue(row, ['commercial', 'value', 'economic', 'වාණිජ']) || 'N/A';
-
-        const identityVal = getFieldValue(row, ['identity']) || '';
-
-        const imageSrc = getFieldValue(row, ['image', 'photo', 'url', 'img', 'ඡායාරූප'])
-
-          || 'https://placehold.co/56x56/d1fae5/0f2922?text=🌿';
+        // Resolve Image Source
+        const rawImg = getFieldValue(row, ['Plant Images', 'plant images', 'image', 'photo', 'url', 'img', 'ඡායාරූප']);
+        let imageSrc = '';
+        if (rawImg && rawImg !== 'Not provided' && rawImg.trim() !== '' && (rawImg.startsWith('http') || rawImg.startsWith('./') || rawImg.includes('.'))) {
+          imageSrc = rawImg.trim();
+        } else {
+          imageSrc = `${scientificName}.jpg`;
+        }
 
         const alignmentHTML = row._alignmentHTML || '';
-
         delete row._alignmentHTML;
 
-
-
         const cardId = `plant-card-${idx}`;
-
         const identityBadge = identityVal
-
           ? `<span class="badge" style="background:${parseFloat(identityVal) >= 90 ? '#d1fae5' : parseFloat(identityVal) >= 70 ? '#fef3c7' : '#fee2e2'};color:${parseFloat(identityVal) >= 90 ? '#065f46' : parseFloat(identityVal) >= 70 ? '#92400e' : '#991b1b'};"><i class="fa-solid fa-chart-bar"></i> ${identityVal}</span>`
-
           : '';
 
-
-
         const itemHtml = `
-
           <div class="plant-result-item">
-
             <div class="plant-summary-row" onclick="toggleCard('${cardId}')">
-
-              <img src="${imageSrc}" class="plant-thumb" alt="${plantName}" onerror="this.src='https://placehold.co/56x56/d1fae5/0f2922?text=🌿'">
-
+              <img src="${imageSrc}" class="plant-thumb" alt="${scientificName}" onerror="this.onerror=null; this.src='https://placehold.co/56x56/d1fae5/0f2922?text=🌿';">
               <div class="plant-summary-info">
-
-                <h3>${plantName}</h3>
-
+                <h3>${scientificName}</h3>
+                ${commonName !== 'N/A' ? `<div class="plant-summary-subtitle"><i class="fa-solid fa-signature"></i> ${commonName}</div>` : ''}
                 <div class="plant-summary-meta">
-
                   <span class="badge"><i class="fa-solid fa-seedling"></i> ${plantType}</span>
-
+                  ${family !== 'N/A' ? `<span class="badge" style="background:#e0e7ff; color:#3730a3;"><i class="fa-solid fa-sitemap"></i> ${family}</span>` : ''}
                   ${identityBadge}
-
                 </div>
-
               </div>
-
               <button class="expand-btn" id="btn-${cardId}">
-
                 <span>Details</span>
-
                 <span class="chevron">&#8964;</span>
-
               </button>
-
             </div>
-
             <div class="plant-body" id="${cardId}">
-
               <div class="plant-body-inner">
-
                 <div class="plant-details-grid">
-
+                  <!-- 1. Taxonomic Profile -->
                   <div class="detail-box">
+                    <strong><i class="fa-solid fa-tag"></i> Scientific Name:</strong>
+                    <span><em>${scientificName}</em></span>
+                  </div>
+                  <div class="detail-box">
+                    <strong><i class="fa-solid fa-signature"></i> Common Name:</strong>
+                    <span>${commonName}</span>
+                  </div>
+                  <div class="detail-box">
+                    <strong><i class="fa-solid fa-sitemap"></i> Family:</strong>
+                    <span>${family}</span>
+                  </div>
+                  <div class="detail-box">
+                    <strong><i class="fa-solid fa-dna"></i> Species:</strong>
+                    <span>${species}</span>
+                  </div>
+                  <div class="detail-box">
+                    <strong><i class="fa-solid fa-seedling"></i> Plant Type / Growth Form:</strong>
+                    <span>${plantType}</span>
+                  </div>
 
+                  <!-- 2. Botanical Descriptions -->
+                  <div class="detail-box full-width">
                     <strong><i class="fa-solid fa-align-left"></i> Plant Description:</strong>
-
                     <span>${description}</span>
-
+                  </div>
+                  <div class="detail-box full-width">
+                    <strong><i class="fa-solid fa-leaf"></i> Morphological Features:</strong>
+                    <span>${morphology}</span>
                   </div>
 
+                  <!-- 3. Distribution & Habitat -->
                   <div class="detail-box">
-
-                    <strong><i class="fa-solid fa-map-location-dot"></i> Regional Names:</strong>
-
-                    <span>${regionalNames}</span>
-
+                    <strong><i class="fa-solid fa-earth-asia"></i> Distribution:</strong>
+                    <span>${distribution}</span>
                   </div>
-
                   <div class="detail-box">
-
-                    <strong><i class="fa-solid fa-coins"></i> Commercial Value:</strong>
-
-                    <span>${commercialValue}</span>
-
+                    <strong><i class="fa-solid fa-mountain-sun"></i> Habitat:</strong>
+                    <span>${habitat}</span>
+                  </div>
+                  <div class="detail-box full-width">
+                    <strong><i class="fa-solid fa-cloud-sun-rain"></i> Climate & Soil Requirements:</strong>
+                    <span>${climateSoil}</span>
                   </div>
 
+                  <!-- 4. Uses & Phytochemistry -->
+                  <div class="detail-box">
+                    <strong><i class="fa-solid fa-hand-holding-heart"></i> Uses:</strong>
+                    <span>${uses}</span>
+                  </div>
+                  <div class="detail-box">
+                    <strong><i class="fa-solid fa-mortar-pestle"></i> Traditional Uses (Sri Lanka):</strong>
+                    <span>${traditionalUses}</span>
+                  </div>
+                  <div class="detail-box full-width">
+                    <strong><i class="fa-solid fa-flask-vial"></i> Key Phytochemicals:</strong>
+                    <span>${phytochemicals}</span>
+                  </div>
                 </div>
-
                 ${alignmentHTML}
-
               </div>
-
             </div>
-
           </div>`;
-
         detailedContainer.innerHTML += itemHtml;
-
       });
 
 
