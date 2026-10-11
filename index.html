@@ -2467,64 +2467,6 @@
 
     }
 
-
-
-    // 2. Perform Excel Matching / Search logic
-
-    function performDnaSearch() {
-
-      const scientificName = document.getElementById('scientificNameInput').value.trim().toUpperCase();
-
-      const rawRbcl = document.getElementById('rbclInput').value.trim().toUpperCase();
-
-      const rawMatk = document.getElementById('matkInput').value.trim().toUpperCase();
-
-      const rawIts = document.getElementById('itsInput').value.trim().toUpperCase();
-
-
-
-      if (excelDatabase.length === 0) {
-
-        showAlert('Database Not Loaded', 'The plant CSV database has not loaded yet.\nPlease refresh the page or check the CSV file.', '🗄️');
-
-        return;
-
-      }
-
-
-
-      if (!scientificName && !rawRbcl && !rawMatk && !rawIts) {
-
-        showAlert('Search Criteria Required', 'Please enter at least one search criteria.\nTry entering a Scientific Name or a DNA sequence.', '🔍');
-
-        return;
-
-      }
-
-
-
-      // 5. Sequence Validation
-
-      const invalidRegex = /[^ATCGU\s-]/;
-
-      if (invalidRegex.test(rawRbcl) || invalidRegex.test(rawMatk) || invalidRegex.test(rawIts)) {
-
-        showAlert('Invalid DNA Sequence', 'Invalid characters detected in DNA sequence!\nOnly A, T, C, G, U are allowed.', '🧬');
-
-        return;
-
-      }
-
-
-
-      const rbcl = rawRbcl.replace(/[^ATCGU]/g, '');
-
-      const matk = rawMatk.replace(/[^ATCGU]/g, '');
-
-      const its = rawIts.replace(/[^ATCGU]/g, '');
-
-
-
     // State for chunked results pagination
     let currentSearchResults = [];
     let currentRenderedIndex = 0;
