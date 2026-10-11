@@ -2034,9 +2034,11 @@
 
       const alignLen = a1.length;
 
-      const identity = alignLen > 0 ? (matches / alignLen * 100).toFixed(2) : "0.00";
-
-
+      // In DNA Barcoding, query sequences (e.g. Sanger reads ~550bp) are often shorter than full chloroplast reference genes in DB (~1366bp).
+      // Standard Needleman-Wunsch with (matches / alignLen) severely punishes length discrepancies with trailing gaps.
+      // Dividing by min(M, N) computes true coverage-normalized identity so the correct plant is identified regardless of read length.
+      const effectiveLength = Math.min(M, N);
+      const identity = effectiveLength > 0 ? (matches / effectiveLength * 100).toFixed(2) : "0.00";
 
       return { a1, a2, middle, matches, mismatches, gaps, alignLen, identity, score: dp[M][N], qLen: M, sLen: N };
 
