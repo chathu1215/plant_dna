@@ -2345,11 +2345,8 @@
       excelDatabase.forEach(row => {
 
         if (scientificName) {
-
-          const val = getFieldValue(row, ['scientific', 'name', 'species', 'විද්‍යාත්මක']);
-
+          const val = getFieldValue(row, ['Scientific Name', 'scientific name', 'Common Name', 'common name', 'Genus', 'Species']);
           if (!val || !String(val).toUpperCase().includes(scientificName)) return;
-
         }
 
 
@@ -2371,13 +2368,9 @@
 
 
         const queries = [
-
-          { query: rbcl, keys: ['rbcl', 'rbc l', 'rbc-l'], label: 'rbcL', weight: 40 },
-
-          { query: matk, keys: ['matk', 'mat k', 'mat-k'], label: 'matK', weight: 40 },
-
-          { query: its, keys: ['its', 'its1', 'its2', 'its region'], label: 'ITS', weight: 20 },
-
+          { query: rbcl, keys: ['DNA Sequence (rbcL)', 'dna sequence (rbcl)', 'rbcl', 'rbcL sequence', 'rbc-l'], label: 'rbcL', weight: 40 },
+          { query: matk, keys: ['DNA Sequence (matK)', 'dna sequence (matk)', 'matk', 'matK sequence', 'mat-k'], label: 'matK', weight: 40 },
+          { query: its,  keys: ['DNA Sequence (ITS)',  'dna sequence (its)',  'its',  'ITS sequence',  'its region'],  label: 'ITS',  weight: 20 },
         ];
 
 
