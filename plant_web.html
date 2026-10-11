@@ -1,1432 +1,2814 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Plant DNA Identification System</title>
-  
+
+
+
   <!-- Website Favicon (Icon shown in the browser tab) -->
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
 
+
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- SheetJS Library for Reading Excel Files -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+
+
+  <!-- PapaParse library for loading the hosted CSV database -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     * {
+
       margin: 0;
+
       padding: 0;
+
       box-sizing: border-box;
+
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
     }
+
+
 
     :root {
+
       --primary-dark: #0f2922;
+
       --primary-medium: #1b4332;
+
       --accent-green: #10b981;
+
       --accent-hover: #059669;
+
       --light-mint: #d1fae5;
+
       --bg-gradient: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+
       --surface-color: rgba(255, 255, 255, 0.85);
+
       --glass-border: rgba(255, 255, 255, 0.6);
+
       --text-main: #1f2937;
+
       --text-muted: #4b5563;
+
     }
+
+
 
     body {
+
       background: var(--bg-gradient);
+
       background-attachment: fixed;
+
       color: var(--text-main);
+
       min-height: 100vh;
+
       display: flex;
+
       flex-direction: column;
+
     }
+
+
 
     /* Navbar Styling */
+
     .navbar {
+
       width: 100%;
+
       background: rgba(15, 41, 34, 0.98);
+
       backdrop-filter: blur(12px);
+
       -webkit-backdrop-filter: blur(12px);
+
       padding: 1rem 2rem;
+
       display: flex;
+
       justify-content: space-between;
+
       align-items: center;
+
       position: sticky;
+
       top: 0;
+
       z-index: 1000;
+
       box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
     }
+
+
 
     .nav-brand {
+
       display: flex;
+
       align-items: center;
+
       gap: 12px;
+
       text-decoration: none;
+
     }
+
+
 
     .logo-icon {
+
       background: linear-gradient(135deg, var(--accent-green), var(--accent-hover));
+
       color: white;
+
       width: 45px;
+
       height: 45px;
+
       border-radius: 12px;
+
       display: flex;
+
       justify-content: center;
+
       align-items: center;
+
       font-size: 1.4rem;
+
       box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+
       transition: transform 0.3s ease;
+
     }
-    
+
+
+
     .nav-brand:hover .logo-icon {
+
       transform: scale(1.05) rotate(-5deg);
+
     }
+
+
 
     .brand-title {
+
       color: #ffffff;
+
       font-size: 1.3rem;
+
       font-weight: 800;
+
       letter-spacing: -0.5px;
+
     }
+
+
 
     .brand-subtitle {
+
       color: var(--accent-green);
+
       font-size: 0.75rem;
+
       font-weight: 700;
+
       letter-spacing: 1.5px;
+
       text-transform: uppercase;
+
       display: block;
+
     }
+
+
 
     .nav-menu {
+
       display: flex;
+
       list-style: none;
+
       gap: 1.5rem;
+
       align-items: center;
+
     }
+
+
 
     .nav-link {
+
       color: #9ca3af;
+
       text-decoration: none;
+
       font-size: 0.95rem;
+
       font-weight: 600;
+
       display: flex;
+
       align-items: center;
+
       gap: 8px;
+
       padding: 0.6rem 1.2rem;
+
       border-radius: 10px;
+
       transition: all 0.3s ease;
+
     }
 
-    .nav-link:hover, .nav-link.active {
-      background: rgba(255,255,255,0.1);
+
+
+    .nav-link:hover,
+    .nav-link.active {
+
+      background: rgba(255, 255, 255, 0.1);
+
       color: #ffffff;
+
     }
+
+
 
     /* Main Container & Layout */
+
     .main-container {
+
       flex: 1;
+
       width: 100%;
+
       max-width: 1000px;
+
       margin: 3rem auto;
+
       padding: 0 1.5rem;
+
       animation: fadeIn 0.6s ease-out;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+
     }
 
-    .dna-search-card, .results-card {
-      background: var(--surface-color);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      width: 100%;
-      padding: 2.5rem;
-      border-radius: 24px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-      border: 1px solid var(--glass-border);
-      margin-bottom: 2.5rem;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+
+    @keyframes fadeIn {
+
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
     }
+
+
+
+    .dna-search-card,
+    .results-card {
+
+      background: var(--surface-color);
+
+      backdrop-filter: blur(20px);
+
+      -webkit-backdrop-filter: blur(20px);
+
+      width: 100%;
+
+      padding: 2.5rem;
+
+      border-radius: 24px;
+
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+
+      border: 1px solid var(--glass-border);
+
+      margin-bottom: 2.5rem;
+
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    }
+
+
 
     .dna-search-card:hover {
+
       box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+
     }
+
+
 
     .search-header {
+
       text-align: center;
+
       margin-bottom: 2rem;
+
     }
+
+
 
     .search-header h2 {
+
       color: var(--primary-dark);
+
       font-size: 2.2rem;
+
       font-weight: 800;
+
       letter-spacing: -1px;
+
       margin-bottom: 0.5rem;
+
     }
-    
+
+
+
     .search-header p {
+
       color: var(--text-muted);
+
       font-size: 1.05rem;
+
     }
+
+
 
     /* DB Status Badge */
+
     .db-status-badge {
+
       background: white;
+
       border: 1px solid #e5e7eb;
+
       padding: 10px 18px;
+
       border-radius: 12px;
+
       display: flex;
+
       align-items: center;
+
       justify-content: space-between;
+
       margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+
       transition: all 0.3s ease;
+
     }
+
+
 
     .db-status-info {
+
       display: flex;
+
       align-items: center;
+
       gap: 12px;
+
     }
+
+
 
     .db-status-icon {
+
       width: 12px;
+
       height: 12px;
+
       border-radius: 50%;
+
       background: #fbbf24;
+
       box-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+
       animation: pulse 1.5s infinite;
+
     }
+
+
 
     .db-status-icon.active {
+
       background: #10b981;
+
       box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+
       animation: none;
+
     }
-    
+
+
+
     .db-status-icon.error {
+
       background: #ef4444;
+
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+
       animation: none;
+
     }
+
+
 
     @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.8; }
+
+      0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
     }
+
+
 
     .db-status-text {
+
       font-size: 0.95rem;
+
       font-weight: 600;
+
       color: var(--text-main);
+
     }
+
+
 
     .db-status-text span.subtext {
+
       color: var(--text-muted);
+
       font-weight: 500;
+
       font-size: 0.85rem;
+
       margin-left: 6px;
+
     }
+
+
 
     .db-custom-btn {
+
       background: #f3f4f6;
+
       color: var(--text-main);
+
       padding: 6px 12px;
+
       border-radius: 8px;
+
       font-size: 0.85rem;
+
       font-weight: 600;
+
       cursor: pointer;
+
       display: flex;
+
       align-items: center;
+
       gap: 6px;
+
       transition: all 0.2s ease;
+
       text-decoration: none;
+
     }
 
+
+
     .db-custom-btn:hover {
+
       background: #e5e7eb;
+
       color: var(--primary-dark);
+
     }
+
+
 
     /* Image Upload Zone - removed */
 
 
+
+
+
     .divider {
+
       display: flex;
+
       align-items: center;
+
       text-align: center;
+
       margin: 2rem 0;
+
       color: #9ca3af;
+
       font-size: 0.85rem;
+
       font-weight: 600;
+
       letter-spacing: 1px;
+
     }
 
-    .divider::before, .divider::after {
+
+
+    .divider::before,
+    .divider::after {
+
       content: '';
+
       flex: 1;
+
       border-bottom: 1px solid #e5e7eb;
+
     }
 
-    .divider span { padding: 0 15px; }
+
+
+    .divider span {
+      padding: 0 15px;
+    }
+
+
 
     /* Input Field & Buttons */
+
     .multi-search-grid {
+
       display: grid;
+
       grid-template-columns: 1fr 1fr;
+
       gap: 20px;
+
       margin-bottom: 1.5rem;
+
     }
+
+
 
     @media (max-width: 650px) {
+
       .multi-search-grid {
+
         grid-template-columns: 1fr;
+
       }
+
     }
+
+
 
     .search-input-group {
+
       display: flex;
+
       align-items: center;
+
       background: white;
+
       border: 2px solid #e5e7eb;
+
       border-radius: 14px;
+
       padding: 8px 16px;
+
       transition: all 0.3s ease;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02) inset;
+
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02) inset;
+
     }
-    
+
+
+
     .search-input-group:focus-within {
+
       border-color: var(--accent-green);
+
       box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+
     }
+
+
 
     .dna-input {
+
       width: 100%;
+
       border: none;
+
       outline: none;
+
       background: transparent;
+
       padding: 10px 0;
+
       font-size: 1rem;
+
       font-weight: 600;
+
       color: var(--text-main);
+
       text-transform: uppercase;
+
     }
-    
+
+
+
     .dna-input::placeholder {
+
       color: #9ca3af;
+
       font-weight: 500;
+
       text-transform: none;
+
     }
+
+
 
     .btn-search {
+
       width: 100%;
+
       background: linear-gradient(135deg, var(--accent-green), var(--accent-hover));
+
       color: white;
+
       border: none;
+
       padding: 16px;
+
       font-size: 1.1rem;
+
       font-weight: 700;
+
       border-radius: 14px;
+
       cursor: pointer;
+
       transition: all 0.3s ease;
+
       box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+
     }
-    
+
+
+
     .btn-search:hover {
+
       transform: translateY(-3px);
+
       box-shadow: 0 15px 25px rgba(16, 185, 129, 0.4);
+
     }
+
+
 
     /* Results Container & View Switcher */
+
     .results-header {
+
       display: flex;
+
       justify-content: space-between;
+
       align-items: center;
+
       border-bottom: 2px solid #e5e7eb;
+
       padding-bottom: 1.2rem;
+
       margin-bottom: 1.5rem;
+
       flex-wrap: wrap;
+
       gap: 15px;
+
     }
-    
+
+
+
     .results-header h3 {
+
       font-size: 1.5rem;
+
       color: var(--primary-dark);
+
       font-weight: 800;
+
     }
+
+
 
     .view-toggle-btns {
+
       display: flex;
+
       gap: 10px;
+
       background: #f3f4f6;
+
       padding: 6px;
+
       border-radius: 12px;
+
     }
+
+
 
     .toggle-btn {
+
       background: transparent;
+
       border: none;
+
       color: var(--text-muted);
+
       padding: 8px 16px;
+
       border-radius: 8px;
+
       cursor: pointer;
+
       font-weight: 600;
+
       font-size: 0.9rem;
+
       transition: all 0.3s;
+
     }
+
+
 
     .toggle-btn.active {
+
       background: white;
+
       color: var(--primary-dark);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
     }
+
+
 
     /* Detailed View Styles */
+
     .plant-result-item {
+
       border: 1px solid #e5e7eb;
+
       border-radius: 20px;
+
       margin-top: 1.2rem;
+
       background: white;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+
       overflow: hidden;
+
       transition: box-shadow 0.3s;
+
     }
+
+
 
     .plant-result-item:hover {
-      box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+
     }
+
+
 
     /* Compact summary row (always visible) */
+
     .plant-summary-row {
+
       display: flex;
+
       align-items: center;
+
       gap: 1.2rem;
+
       padding: 1rem 1.4rem;
+
       cursor: pointer;
+
       user-select: none;
+
     }
+
+
 
     .plant-thumb {
+
       width: 56px;
+
       height: 56px;
+
       object-fit: cover;
+
       border-radius: 12px;
+
       border: 2px solid #e5e7eb;
+
       flex-shrink: 0;
+
     }
+
+
 
     .plant-summary-info {
+
       flex: 1;
+
       min-width: 0;
+
     }
+
+
 
     .plant-summary-info h3 {
+
       font-size: 1.1rem;
+
       font-weight: 700;
+
       color: var(--primary-dark);
+
       white-space: nowrap;
+
       overflow: hidden;
+
       text-overflow: ellipsis;
+
     }
+
+
 
     .plant-summary-meta {
+
       display: flex;
+
       gap: 8px;
+
       margin-top: 4px;
+
       flex-wrap: wrap;
+
       align-items: center;
+
     }
+
+
 
     .expand-btn {
+
       background: #f3f4f6;
+
       border: 1px solid #e5e7eb;
+
       border-radius: 10px;
+
       padding: 6px 14px;
+
       cursor: pointer;
+
       font-size: 0.85rem;
+
       font-weight: 700;
+
       color: var(--primary-dark);
+
       display: flex;
+
       align-items: center;
+
       gap: 6px;
+
       flex-shrink: 0;
+
       transition: all 0.2s;
+
       white-space: nowrap;
+
     }
+
+
 
     .expand-btn:hover {
+
       background: var(--light-mint);
+
       border-color: var(--accent-green);
+
       color: var(--accent-hover);
+
     }
+
+
 
     .expand-btn .chevron {
+
       transition: transform 0.3s ease;
+
       display: inline-block;
+
     }
+
+
 
     .expand-btn.open .chevron {
+
       transform: rotate(180deg);
+
     }
+
+
 
     /* Collapsible body */
+
     .plant-body {
+
       max-height: 0;
+
       overflow: hidden;
+
       transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
     }
+
+
 
     .plant-body.open {
-      max-height: 9999px; /* large enough for any content */
+
+      max-height: 9999px;
+      /* large enough for any content */
+
     }
+
+
 
     .plant-body-inner {
+
       border-top: 2px solid #f3f4f6;
+
       padding: 1.4rem 1.6rem 1.6rem;
+
     }
+
+
 
     .plant-header {
+
       display: flex;
+
       align-items: center;
+
       gap: 2rem;
+
       margin-bottom: 1.5rem;
+
       border-bottom: 2px solid #f3f4f6;
+
       padding-bottom: 1.5rem;
+
       flex-wrap: wrap;
+
     }
+
+
 
     .plant-display-img {
+
       width: 140px;
+
       height: 140px;
+
       object-fit: cover;
+
       border-radius: 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+
       border: 4px solid white;
+
     }
+
+
 
     .plant-title-info h3 {
+
       color: var(--primary-dark);
+
       font-size: 1.8rem;
+
       font-weight: 800;
+
       margin-bottom: 0.5rem;
+
       letter-spacing: -0.5px;
+
     }
+
+
 
     .badge {
+
       display: inline-block;
+
       padding: 6px 14px;
+
       border-radius: 20px;
+
       font-size: 0.85rem;
+
       font-weight: 700;
+
       background: var(--light-mint);
+
       color: var(--accent-hover);
+
       box-shadow: 0 2px 5px rgba(16, 185, 129, 0.1);
+
     }
+
+
 
     .plant-details-grid {
+
       display: grid;
+
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+
       gap: 1.5rem;
+
     }
+
+
 
     .detail-box {
+
       background: #f9fafb;
+
       padding: 16px 20px;
+
       border-radius: 14px;
+
       border-left: 4px solid var(--accent-green);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+
     }
+
+
 
     .detail-box strong {
+
       display: block;
+
       color: var(--text-muted);
+
       font-size: 0.85rem;
+
       font-weight: 700;
+
       text-transform: uppercase;
+
       letter-spacing: 0.5px;
+
       margin-bottom: 6px;
+
     }
+
+
 
     .detail-box span {
+
       color: var(--text-main);
+
       font-size: 1rem;
+
       font-weight: 500;
+
       line-height: 1.5;
+
       word-break: break-all;
+
     }
+
+
 
     /* Table View Styles */
+
     .table-responsive {
+
       overflow-x: auto;
+
       margin-top: 1.5rem;
+
       border-radius: 16px;
+
       border: 1px solid #e5e7eb;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+
     }
+
+
 
     .results-table {
+
       width: 100%;
+
       border-collapse: separate;
+
       border-spacing: 0;
+
       background: white;
+
     }
 
-    .results-table th, .results-table td {
+
+
+    .results-table th,
+    .results-table td {
+
       border-bottom: 1px solid #e5e7eb;
+
       border-right: 1px solid #e5e7eb;
+
       padding: 14px 18px;
+
       text-align: left;
+
       min-width: 120px;
+
       max-width: 350px;
+
       overflow-wrap: anywhere;
+
       word-wrap: break-word;
+
       vertical-align: top;
+
       font-size: 0.95rem;
+
     }
-    
-    .results-table th:last-child, .results-table td:last-child {
+
+
+
+    .results-table th:last-child,
+    .results-table td:last-child {
+
       border-right: none;
+
     }
+
+
 
     .results-table th {
+
       background: var(--primary-dark);
+
       color: white;
+
       font-weight: 600;
+
       letter-spacing: 0.5px;
+
       position: sticky;
+
       top: 0;
+
       z-index: 10;
+
     }
-    
+
+
+
     .results-table tr:last-child td {
+
       border-bottom: none;
+
     }
-    
+
+
+
     .results-table tbody tr:hover {
+
       background-color: #f8fafc;
+
     }
+
+
 
     /* ===== BLAST Alignment Viewer ===== */
+
     .alignment-panel {
+
       margin-top: 1.8rem;
+
       border-radius: 16px;
+
       overflow: hidden;
+
       border: 1px solid #e5e7eb;
+
     }
+
+
 
     .alignment-panel-header {
+
       background: linear-gradient(135deg, var(--primary-dark), var(--primary-medium));
+
       color: white;
+
       padding: 14px 20px;
+
       display: flex;
+
       align-items: center;
+
       justify-content: space-between;
+
       flex-wrap: wrap;
+
       gap: 10px;
+
     }
+
+
 
     .alignment-panel-header h4 {
+
       font-size: 1rem;
+
       font-weight: 700;
+
       letter-spacing: 0.3px;
+
       display: flex;
+
       align-items: center;
+
       gap: 8px;
+
     }
+
+
 
     .alignment-stats {
+
       display: flex;
+
       gap: 16px;
+
       flex-wrap: wrap;
+
     }
+
+
 
     .alignment-stat {
-      background: rgba(255,255,255,0.15);
+
+      background: rgba(255, 255, 255, 0.15);
+
       border-radius: 8px;
+
       padding: 4px 12px;
+
       font-size: 0.85rem;
+
       font-weight: 600;
+
     }
+
+
 
     .alignment-stat span {
+
       font-weight: 800;
+
       color: #6ee7b7;
+
     }
+
+
 
     .alignment-body {
+
       background: #0f1117;
+
       padding: 20px 24px;
+
       overflow-x: auto;
+
     }
+
+
 
     .alignment-row {
+
       display: flex;
+
       align-items: flex-start;
+
       margin-bottom: 18px;
+
       gap: 0;
+
     }
+
+
 
     .alignment-label {
+
       color: #9ca3af;
+
       font-family: 'Courier New', Courier, monospace;
+
       font-size: 0.9rem;
+
       font-weight: 700;
+
       min-width: 80px;
+
       padding-top: 2px;
+
       flex-shrink: 0;
+
     }
+
+
 
     .alignment-seq {
+
       font-family: 'Courier New', Courier, monospace;
+
       font-size: 0.9rem;
+
       letter-spacing: 1px;
+
       line-height: 1.8;
+
       word-break: break-all;
+
     }
 
-    .alignment-seq .match    { color: #34d399; font-weight: 700; }
-    .alignment-seq .mismatch { color: #f87171; font-weight: 700; background: rgba(248,113,113,0.12); border-radius: 2px; }
-    .alignment-seq .gap      { color: #fbbf24; font-weight: 700; }
+
+
+    .alignment-seq .match {
+      color: #34d399;
+      font-weight: 700;
+    }
+
+    .alignment-seq .mismatch {
+      color: #f87171;
+      font-weight: 700;
+      background: rgba(248, 113, 113, 0.12);
+      border-radius: 2px;
+    }
+
+    .alignment-seq .gap {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+
+
 
     .alignment-middle {
+
       font-family: 'Courier New', Courier, monospace;
+
       font-size: 0.9rem;
+
       letter-spacing: 1px;
+
       line-height: 1.8;
+
       color: #6ee7b7;
+
       word-break: break-all;
+
     }
+
+
 
     .alignment-legend {
+
       display: flex;
+
       gap: 20px;
+
       padding: 12px 24px;
+
       background: #0f1117;
-      border-top: 1px solid rgba(255,255,255,0.08);
+
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+
       flex-wrap: wrap;
+
     }
+
+
 
     .legend-item {
+
       display: flex;
+
       align-items: center;
+
       gap: 6px;
+
       font-size: 0.82rem;
+
       color: #9ca3af;
+
       font-family: 'Courier New', Courier, monospace;
+
     }
+
+
 
     .legend-dot {
+
       width: 12px;
+
       height: 12px;
+
       border-radius: 3px;
+
       flex-shrink: 0;
+
     }
-    .legend-dot.match    { background: #34d399; }
-    .legend-dot.mismatch { background: #f87171; }
-    .legend-dot.gap      { background: #fbbf24; }
+
+    .legend-dot.match {
+      background: #34d399;
+    }
+
+    .legend-dot.mismatch {
+      background: #f87171;
+    }
+
+    .legend-dot.gap {
+      background: #fbbf24;
+    }
+
+
 
     .identity-bar-wrap {
-      background: rgba(255,255,255,0.1);
+
+      background: rgba(255, 255, 255, 0.1);
+
       border-radius: 20px;
+
       height: 8px;
+
       width: 120px;
+
       overflow: hidden;
+
     }
+
     .identity-bar-fill {
+
       height: 100%;
+
       border-radius: 20px;
+
       background: linear-gradient(90deg, #34d399, #10b981);
+
       transition: width 0.8s ease;
+
     }
   </style>
+
 </head>
+
 <body>
 
+
+
   <nav class="navbar">
+
     <a href="#" class="nav-brand">
+
       <div class="logo-icon"><i class="fa-solid fa-leaf"></i></div>
+
       <div class="brand-text">
+
         <span class="brand-title">Plant DNA Identification System</span>
+
         <span class="brand-subtitle">Ruhuna BST</span>
+
       </div>
+
     </a>
+
     <ul class="nav-menu">
+
       <li><a href="#home" class="nav-link active"><i class="fa-solid fa-house"></i> Home</a></li>
+
     </ul>
+
   </nav>
 
+
+
   <main class="main-container">
-    
-    <!-- DB Loading Status Badge -->
+
+
+
+    <!-- Hosted CSV database status -->
     <div class="db-status-badge" id="dbStatusBadge">
       <div class="db-status-info">
         <div class="db-status-icon" id="dbStatusIcon"></div>
         <div class="db-status-text" id="dbStatusText">
-          Loading Database... <span class="subtext">Auto-fetching DB/plant_DNA_DB.xlsx</span>
+          Loading plant database...
+          <span class="subtext">Cleaned_Plant_DNA_Barcoding_Data.csv</span>
         </div>
-      </div>
-      <div>
-        <label for="excelInput" class="db-custom-btn">
-          <i class="fa-solid fa-folder-open"></i> Custom DB
-        </label>
-        <input type="file" id="excelInput" accept=".xlsx, .xls, .csv" style="display:none;" onchange="loadCustomExcelFile(event)">
       </div>
     </div>
 
     <!-- Search Form -->
+
     <div class="dna-search-card">
+
       <div class="search-header">
+
         <h2><i class="fa-solid fa-dna"></i> Search Plant Database</h2>
+
         <p>Search by Scientific Name or DNA Sequence (rbcL / matK / ITS)</p>
+
       </div>
 
+
+
       <div class="multi-search-grid">
+
         <div class="search-input-group">
+
           <i class="fa-solid fa-leaf" style="margin-right:10px; color:var(--primary-medium);"></i>
-          <input type="text" id="scientificNameInput" class="dna-input" placeholder="Scientific Name" autocomplete="off" style="text-transform: none;">
+
+          <input type="text" id="scientificNameInput" class="dna-input" placeholder="Scientific Name" autocomplete="off"
+            style="text-transform: none;">
+
         </div>
+
         <div class="search-input-group">
+
           <i class="fa-solid fa-dna" style="margin-right:10px; color:var(--primary-medium);"></i>
-          <input type="text" id="rbclInput" class="dna-input" placeholder="rbcL Sequence" autocomplete="off" onfocus="lastFocusedDnaInput = 'rbclInput'">
+
+          <input type="text" id="rbclInput" class="dna-input" placeholder="rbcL Sequence" autocomplete="off"
+            onfocus="lastFocusedDnaInput = 'rbclInput'">
+
         </div>
+
         <div class="search-input-group">
+
           <i class="fa-solid fa-dna" style="margin-right:10px; color:var(--primary-medium);"></i>
-          <input type="text" id="matkInput" class="dna-input" placeholder="matK Sequence" autocomplete="off" onfocus="lastFocusedDnaInput = 'matkInput'">
+
+          <input type="text" id="matkInput" class="dna-input" placeholder="matK Sequence" autocomplete="off"
+            onfocus="lastFocusedDnaInput = 'matkInput'">
+
         </div>
+
         <div class="search-input-group">
+
           <i class="fa-solid fa-dna" style="margin-right:10px; color:var(--primary-medium);"></i>
-          <input type="text" id="itsInput" class="dna-input" placeholder="ITS Sequence" autocomplete="off" onfocus="lastFocusedDnaInput = 'itsInput'">
+
+          <input type="text" id="itsInput" class="dna-input" placeholder="ITS Sequence" autocomplete="off"
+            onfocus="lastFocusedDnaInput = 'itsInput'">
+
         </div>
+
       </div>
+
+
+
 
 
       <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
+
         <div style="flex:1; min-width:250px;">
-          <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Alignment Mode (Algorithm):</span>
-          <select id="alignmentMode" style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
+
+          <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Alignment Mode
+            (Algorithm):</span>
+
+          <select id="alignmentMode"
+            style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
+
             <option value="local">Local (Smith-Waterman) - Best for Partial Reads</option>
+
             <option value="global">Global (Needleman-Wunsch) - Best for Full Genes</option>
+
           </select>
+
         </div>
+
         <div style="flex:1; min-width:250px;">
-          <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Minimum Identity Cutoff:</span>
-          <select id="identityThreshold" style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
+
+          <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Minimum
+            Identity Cutoff:</span>
+
+          <select id="identityThreshold"
+            style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
+
             <option value="70">70% (Default Filter)</option>
+
             <option value="90">90% (Strict Match)</option>
+
             <option value="50">50% (Lenient Match)</option>
+
             <option value="0">0% (Show All Results)</option>
+
           </select>
+
         </div>
+
       </div>
+
+
 
       <button class="btn-search" onclick="performDnaSearch()">
+
         <i class="fa-solid fa-microscope"></i> Analyze & Match DNA
+
       </button>
+
     </div>
 
+
+
     <!-- Search Results View Container -->
+
     <div class="results-card" id="resultsCard">
+
       <div class="results-header">
+
         <h3><i class="fa-solid fa-list-check"></i> Matching Results</h3>
+
         <div class="view-toggle-btns">
-          <button class="toggle-btn active" id="btnDetailedView" onclick="switchView('detailed')"><i class="fa-solid fa-id-card"></i> Detailed View</button>
-          <button class="toggle-btn" id="btnTableView" onclick="switchView('table')"><i class="fa-solid fa-table"></i> Table View</button>
+
+          <button class="toggle-btn active" id="btnDetailedView" onclick="switchView('detailed')"><i
+              class="fa-solid fa-id-card"></i> Detailed View</button>
+
+          <button class="toggle-btn" id="btnTableView" onclick="switchView('table')"><i class="fa-solid fa-table"></i>
+            Table View</button>
+
         </div>
+
       </div>
+
+
 
       <div id="resultsVerdictBanner" style="display:none; margin-bottom:1.5rem;"></div>
 
+
+
       <!-- Container for Detailed Cards -->
+
       <div id="detailedViewContainer"></div>
 
+
+
       <!-- Container for Raw Excel Table -->
+
       <div id="tableViewContainer" class="table-responsive" style="display: none;">
+
         <table class="results-table">
+
           <thead>
+
             <tr id="tableHeader"></tr>
+
           </thead>
+
           <tbody id="tableBody"></tbody>
+
         </table>
+
       </div>
+
     </div>
+
+
 
   </main>
 
+
+
   <script>
+
     let excelDatabase = [];
+
     let lastFocusedDnaInput = 'rbclInput';
 
-    // Auto-load Default Database on Startup
+
+
+    // Load the CSV database from the same GitHub Pages folder as index.html.
     document.addEventListener('DOMContentLoaded', async () => {
       const icon = document.getElementById('dbStatusIcon');
       const text = document.getElementById('dbStatusText');
-      
+
       try {
-        const response = await fetch('DB/plant_DNA_DB.xlsx');
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const arrayBuffer = await response.arrayBuffer();
-        const data = new Uint8Array(arrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        excelDatabase = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-        
+        const response = await fetch('./Cleaned_Plant_DNA_Barcoding_Data.csv', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`CSV request failed: ${response.status}`);
+        }
+
+        const csvText = await response.text();
+        const parsed = Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: 'greedy',
+          transformHeader: header => header.replace(/^\uFEFF/, '').trim()
+        });
+
+        if (parsed.errors && parsed.errors.length) {
+          console.warn('CSV parsing warnings:', parsed.errors);
+        }
+
+        excelDatabase = (parsed.data || []).filter(row =>
+          Object.values(row).some(value => String(value ?? '').trim() !== '')
+        );
+
+        if (!excelDatabase.length) {
+          throw new Error('The CSV file loaded but contains no data rows.');
+        }
+
         icon.className = 'db-status-icon active';
-        text.innerHTML = `Database Active: <span style="color:#059669;">plant_DNA_DB.xlsx</span> <span class="subtext">(${excelDatabase.length} Species Auto-Loaded)</span>`;
+        text.innerHTML = `Database Active: <span style="color:#059669;">Cleaned_Plant_DNA_Barcoding_Data.csv</span> <span class="subtext">(${excelDatabase.length} records loaded)</span>`;
       } catch (error) {
-        console.error('Error auto-loading DB:', error);
+        console.error('Error loading CSV database:', error);
         icon.className = 'db-status-icon error';
-        text.innerHTML = `Auto-fetch Blocked (Local file://) <span class="subtext">Please upload manually or run via server.</span>`;
+        text.innerHTML = `Database failed to load. <span class="subtext">Check that the CSV is in the same GitHub repository folder as index.html and the filename matches exactly.</span>`;
       }
     });
 
-    // Load Custom Excel File Manually
-    function loadCustomExcelFile(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const icon = document.getElementById('dbStatusIcon');
-      const text = document.getElementById('dbStatusText');
-      
-      icon.className = 'db-status-icon'; // pulse while loading
-      text.innerHTML = `Loading ${file.name}...`;
-
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          excelDatabase = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-          
-          icon.className = 'db-status-icon active';
-          text.innerHTML = `Database Active: <span style="color:#059669;">${file.name}</span> <span class="subtext">(${excelDatabase.length} Species Loaded)</span>`;
-        } catch(err) {
-          icon.className = 'db-status-icon error';
-          text.innerHTML = `Error parsing file <span class="subtext">Make sure it's a valid .xlsx</span>`;
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
     // ============================================================
+
     //  Needleman-Wunsch Global Alignment (industry-standard BLAST)
+
     // ============================================================
+
     function needlemanWunsch(seq1, seq2) {
-      const MATCH    =  2;
+
+      const MATCH = 2;
+
       const MISMATCH = -1;
-      const GAP      = -2;
+
+      const GAP = -2;
+
       const m = seq1.length, n = seq2.length;
 
+
+
       // Cap sequences to avoid freezing on huge inputs (>2000 bases each)
+
       const s1 = seq1.substring(0, 2000);
+
       const s2 = seq2.substring(0, 2000);
+
       const M = s1.length, N = s2.length;
+
+
 
       // Build scoring matrix
-      const dp = Array.from({length: M+1}, () => new Int16Array(N+1));
+
+      const dp = Array.from({ length: M + 1 }, () => new Int16Array(N + 1));
+
       for (let i = 0; i <= M; i++) dp[i][0] = i * GAP;
+
       for (let j = 0; j <= N; j++) dp[0][j] = j * GAP;
 
+
+
       for (let i = 1; i <= M; i++) {
+
         for (let j = 1; j <= N; j++) {
-          const score = s1[i-1] === s2[j-1] ? MATCH : MISMATCH;
+
+          const score = s1[i - 1] === s2[j - 1] ? MATCH : MISMATCH;
+
           dp[i][j] = Math.max(
-            dp[i-1][j-1] + score,
-            dp[i-1][j]   + GAP,
-            dp[i][j-1]   + GAP
+
+            dp[i - 1][j - 1] + score,
+
+            dp[i - 1][j] + GAP,
+
+            dp[i][j - 1] + GAP
+
           );
+
         }
+
       }
 
+
+
       // Traceback
+
       let a1 = '', a2 = '', middle = '';
+
       let i = M, j = N;
+
       while (i > 0 || j > 0) {
-        if (i > 0 && j > 0 && dp[i][j] === dp[i-1][j-1] + (s1[i-1]===s2[j-1] ? MATCH : MISMATCH)) {
-          a1 = s1[i-1] + a1;
-          a2 = s2[j-1] + a2;
-          middle = (s1[i-1] === s2[j-1] ? '|' : '.') + middle;
+
+        if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + (s1[i - 1] === s2[j - 1] ? MATCH : MISMATCH)) {
+
+          a1 = s1[i - 1] + a1;
+
+          a2 = s2[j - 1] + a2;
+
+          middle = (s1[i - 1] === s2[j - 1] ? '|' : '.') + middle;
+
           i--; j--;
-        } else if (i > 0 && dp[i][j] === dp[i-1][j] + GAP) {
-          a1 = s1[i-1] + a1;
+
+        } else if (i > 0 && dp[i][j] === dp[i - 1][j] + GAP) {
+
+          a1 = s1[i - 1] + a1;
+
           a2 = '-' + a2;
+
           middle = ' ' + middle;
+
           i--;
+
         } else {
+
           a1 = '-' + a1;
-          a2 = s2[j-1] + a2;
+
+          a2 = s2[j - 1] + a2;
+
           middle = ' ' + middle;
+
           j--;
+
         }
+
       }
+
+
 
       // Calculate stats
+
       let matches = 0, mismatches = 0, gaps = 0;
+
       for (let k = 0; k < a1.length; k++) {
+
         if (a1[k] === '-' || a2[k] === '-') gaps++;
+
         else if (a1[k] === a2[k]) matches++;
+
         else mismatches++;
+
       }
+
       const alignLen = a1.length;
+
       const identity = alignLen > 0 ? (matches / alignLen * 100).toFixed(2) : "0.00";
+
+
 
       return { a1, a2, middle, matches, mismatches, gaps, alignLen, identity, score: dp[M][N], qLen: M, sLen: N };
+
     }
 
+
+
     // ============================================================
+
     //  Smith-Waterman Local Alignment (best for partial sequences)
+
     // ============================================================
+
     function smithWaterman(seq1, seq2) {
-      const MATCH    =  2;
+
+      const MATCH = 2;
+
       const MISMATCH = -1;
-      const GAP      = -2;
-      
+
+      const GAP = -2;
+
+
+
       const s1 = seq1.substring(0, 2000);
+
       const s2 = seq2.substring(0, 2000);
+
       const M = s1.length, N = s2.length;
 
-      const dp = Array.from({length: M+1}, () => new Int16Array(N+1));
+
+
+      const dp = Array.from({ length: M + 1 }, () => new Int16Array(N + 1));
+
       let maxScore = 0;
+
       let maxI = 0, maxJ = 0;
 
+
+
       for (let i = 1; i <= M; i++) {
+
         for (let j = 1; j <= N; j++) {
-          const score = s1[i-1] === s2[j-1] ? MATCH : MISMATCH;
+
+          const score = s1[i - 1] === s2[j - 1] ? MATCH : MISMATCH;
+
           dp[i][j] = Math.max(
+
             0,
-            dp[i-1][j-1] + score,
-            dp[i-1][j]   + GAP,
-            dp[i][j-1]   + GAP
+
+            dp[i - 1][j - 1] + score,
+
+            dp[i - 1][j] + GAP,
+
+            dp[i][j - 1] + GAP
+
           );
+
           if (dp[i][j] > maxScore) {
+
             maxScore = dp[i][j];
+
             maxI = i; maxJ = j;
+
           }
+
         }
+
       }
+
+
 
       // Traceback
+
       let a1 = '', a2 = '', middle = '';
+
       let i = maxI, j = maxJ;
+
       while (i > 0 && j > 0 && dp[i][j] > 0) {
-        if (dp[i][j] === dp[i-1][j-1] + (s1[i-1]===s2[j-1] ? MATCH : MISMATCH)) {
-          a1 = s1[i-1] + a1;
-          a2 = s2[j-1] + a2;
-          middle = (s1[i-1] === s2[j-1] ? '|' : '.') + middle;
+
+        if (dp[i][j] === dp[i - 1][j - 1] + (s1[i - 1] === s2[j - 1] ? MATCH : MISMATCH)) {
+
+          a1 = s1[i - 1] + a1;
+
+          a2 = s2[j - 1] + a2;
+
+          middle = (s1[i - 1] === s2[j - 1] ? '|' : '.') + middle;
+
           i--; j--;
-        } else if (dp[i][j] === dp[i-1][j] + GAP) {
-          a1 = s1[i-1] + a1;
+
+        } else if (dp[i][j] === dp[i - 1][j] + GAP) {
+
+          a1 = s1[i - 1] + a1;
+
           a2 = '-' + a2;
+
           middle = ' ' + middle;
+
           i--;
+
         } else {
+
           a1 = '-' + a1;
-          a2 = s2[j-1] + a2;
+
+          a2 = s2[j - 1] + a2;
+
           middle = ' ' + middle;
+
           j--;
+
         }
+
       }
+
+
 
       let matches = 0, mismatches = 0, gaps = 0;
+
       for (let k = 0; k < a1.length; k++) {
+
         if (a1[k] === '-' || a2[k] === '-') gaps++;
+
         else if (a1[k] === a2[k]) matches++;
+
         else mismatches++;
+
       }
+
       const alignLen = a1.length;
+
       const identity = alignLen > 0 ? (matches / alignLen * 100).toFixed(2) : "0.00";
 
+
+
       return { a1, a2, middle, matches, mismatches, gaps, alignLen, identity, score: maxScore, qLen: M, sLen: N };
+
     }
 
+
+
     // ============================================================
+
     // E-Value Calculation (Karlin-Altschul approximation)
+
     // ============================================================
+
     function calculateEValue(score, m, n) {
+
       if (score <= 0) return 10;
+
       const K = 0.1;
+
       const lambda = 0.3;
+
       // Handle extreme exponents that would evaluate to Infinity or 0 abruptly
+
       const exponent = -lambda * score;
+
       if (exponent < -500) return 0; // Effectively zero E-value (perfect match)
+
       const E = K * m * n * Math.exp(exponent);
+
       return E;
+
     }
+
+
 
     // Build the colour-coded HTML for the alignment viewer (60 chars per line)
+
     function buildAlignmentHTML(alignment, regionLabel, eValue) {
+
       const { a1, a2, middle, matches, mismatches, gaps, alignLen, identity, score } = alignment;
+
       const CHUNK = 60;
 
+
+
       let queryLines = [], midLines = [], subjectLines = [];
+
       for (let i = 0; i < a1.length; i += CHUNK) {
+
         queryLines.push(a1.slice(i, i + CHUNK));
+
         midLines.push(middle.slice(i, i + CHUNK));
+
         subjectLines.push(a2.slice(i, i + CHUNK));
+
       }
+
+
 
       function colourSeq(seq) {
+
         return seq.split('').map(c => {
+
           if (c === '-') return `<span class="gap">${c}</span>`;
+
           return c; // colour assigned by middle line context, done below
+
         }).join('');
+
       }
+
+
 
       // Colour query and subject by match/mismatch/gap
+
       function colourPair(qChunk, mChunk, sChunk) {
+
         let qOut = '', sOut = '', mOut = '';
+
         for (let k = 0; k < qChunk.length; k++) {
+
           const q = qChunk[k], s = sChunk[k], m = mChunk[k];
+
           if (q === '-' || s === '-') {
+
             qOut += `<span class="gap">${q}</span>`;
+
             sOut += `<span class="gap">${s}</span>`;
+
             mOut += `<span style="color:#fbbf24"> </span>`;
+
           } else if (q === s) {
+
             qOut += `<span class="match">${q}</span>`;
+
             sOut += `<span class="match">${s}</span>`;
+
             mOut += `<span style="color:#6ee7b7">|</span>`;
+
           } else {
+
             qOut += `<span class="mismatch">${q}</span>`;
+
             sOut += `<span class="mismatch">${s}</span>`;
+
             mOut += `<span style="color:#f87171">.</span>`;
+
           }
+
         }
+
         return { qOut, sOut, mOut };
+
       }
+
+
 
       let rowsHTML = '';
+
       let pos = 1;
+
       for (let i = 0; i < queryLines.length; i++) {
+
         const { qOut, sOut, mOut } = colourPair(queryLines[i], midLines[i], subjectLines[i]);
-        const end = pos + queryLines[i].replace(/-/g,'').length - 1;
+
+        const end = pos + queryLines[i].replace(/-/g, '').length - 1;
+
         rowsHTML += `
+
           <div style="margin-bottom:10px;">
+
             <div class="alignment-row">
+
               <span class="alignment-label">Query&nbsp;&nbsp;&nbsp;</span>
+
               <span class="alignment-seq">${qOut}</span>
+
             </div>
+
             <div class="alignment-row">
+
               <span class="alignment-label">&nbsp;</span>
+
               <span class="alignment-middle">${mOut}</span>
+
             </div>
+
             <div class="alignment-row">
+
               <span class="alignment-label">Subject&nbsp;</span>
+
               <span class="alignment-seq">${sOut}</span>
+
             </div>
+
           </div>`;
+
         pos = end + 1;
+
       }
+
+
 
       const identityNum = parseFloat(identity);
+
       const barColour = identityNum >= 90 ? '#34d399' : identityNum >= 70 ? '#fbbf24' : '#f87171';
 
+
+
       return `
+
         <div class="alignment-panel">
+
           <div class="alignment-panel-header">
+
             <h4><i class="fa-solid fa-align-left"></i> Alignment Viewer &mdash; ${regionLabel}</h4>
+
             <div class="alignment-stats">
+
               <div class="alignment-stat">Identity: <span>${identity}%</span></div>
+
               <div class="alignment-stat">E-value: <span>${eValue === 0 ? "0.0" : eValue.toExponential(2)}</span></div>
+
               <div class="alignment-stat">Matches: <span>${matches}</span></div>
+
               <div class="alignment-stat">Mismatches: <span>${mismatches}</span></div>
+
               <div class="alignment-stat">Gaps: <span>${gaps}</span></div>
+
             </div>
+
             <div style="display:flex;align-items:center;gap:10px;">
+
               <div class="identity-bar-wrap">
+
                 <div class="identity-bar-fill" style="width:${identity}%;background:linear-gradient(90deg,${barColour},${barColour}dd);"></div>
+
               </div>
+
               <span style="color:#6ee7b7;font-weight:800;font-size:1.1rem;">${identity}%</span>
+
             </div>
+
           </div>
+
           <div class="alignment-body">${rowsHTML}</div>
+
           <div class="alignment-legend">
+
             <div class="legend-item"><div class="legend-dot match"></div> Match</div>
+
             <div class="legend-item"><div class="legend-dot mismatch"></div> Mismatch</div>
+
             <div class="legend-item"><div class="legend-dot gap"></div> Gap (–)</div>
+
           </div>
+
         </div>`;
+
     }
 
+
+
     // 2. Perform Excel Matching / Search logic
+
     function performDnaSearch() {
+
       const scientificName = document.getElementById('scientificNameInput').value.trim().toUpperCase();
+
       const rawRbcl = document.getElementById('rbclInput').value.trim().toUpperCase();
+
       const rawMatk = document.getElementById('matkInput').value.trim().toUpperCase();
-      const rawIts  = document.getElementById('itsInput').value.trim().toUpperCase();
+
+      const rawIts = document.getElementById('itsInput').value.trim().toUpperCase();
+
+
 
       if (excelDatabase.length === 0) {
-        alert('Please load an Excel sheet database first!');
+
+        alert('The plant CSV database has not loaded yet. Please refresh the page or check the CSV file.');
+
         return;
+
       }
+
+
 
       if (!scientificName && !rawRbcl && !rawMatk && !rawIts) {
+
         alert('Please enter at least one search criteria.');
+
         return;
+
       }
+
+
 
       // 5. Sequence Validation
+
       const invalidRegex = /[^ATCGU\s-]/;
+
       if (invalidRegex.test(rawRbcl) || invalidRegex.test(rawMatk) || invalidRegex.test(rawIts)) {
+
         alert('Invalid characters detected in DNA sequence!\nOnly A, T, C, G, U are allowed.');
+
         return;
+
       }
 
-      const rbcl = rawRbcl.replace(/[^ATCGU]/g,'');
-      const matk = rawMatk.replace(/[^ATCGU]/g,'');
-      const its  = rawIts.replace(/[^ATCGU]/g,'');
+
+
+      const rbcl = rawRbcl.replace(/[^ATCGU]/g, '');
+
+      const matk = rawMatk.replace(/[^ATCGU]/g, '');
+
+      const its = rawIts.replace(/[^ATCGU]/g, '');
+
+
 
       const mode = document.getElementById('alignmentMode').value;
+
       const threshold = parseFloat(document.getElementById('identityThreshold').value);
+
       const alignFn = mode === 'local' ? smithWaterman : needlemanWunsch;
+
+
 
       let matches = [];
 
+
+
       excelDatabase.forEach(row => {
+
         if (scientificName) {
-          const val = getFieldValue(row, ['scientific','name','species','විද්‍යාත්මක']);
+
+          const val = getFieldValue(row, ['scientific', 'name', 'species', 'විද්‍යාත්මක']);
+
           if (!val || !String(val).toUpperCase().includes(scientificName)) return;
+
         }
 
+
+
         // 1. Multi-marker Combined Score
+
         let totalWeight = 0;
+
         let weightedIdentitySum = 0;
+
         let alignmentsHTML = '';
+
         let bestEvalue = Infinity;
+
         let hasAnyAlignment = false;
+
         let matchedRegions = [];
 
+
+
         const queries = [
-          { query: rbcl, keys: ['rbcl','rbc l','rbc-l'],   label: 'rbcL', weight: 40  },
-          { query: matk, keys: ['matk','mat k','mat-k'],   label: 'matK', weight: 40  },
-          { query: its,  keys: ['its','its1','its2','its region'], label: 'ITS', weight: 20   },
+
+          { query: rbcl, keys: ['rbcl', 'rbc l', 'rbc-l'], label: 'rbcL', weight: 40 },
+
+          { query: matk, keys: ['matk', 'mat k', 'mat-k'], label: 'matK', weight: 40 },
+
+          { query: its, keys: ['its', 'its1', 'its2', 'its region'], label: 'ITS', weight: 20 },
+
         ];
 
+
+
         queries.forEach(({ query, keys, label, weight }) => {
+
           if (!query) return;
+
           totalWeight += weight; // Adjust total weight dynamically based on what user entered
-          
+
+
+
           const rawVal = getFieldValue(row, keys) || '';
-          const target = String(rawVal).toUpperCase().replace(/[^ATCGU]/g,'');
+
+          const target = String(rawVal).toUpperCase().replace(/[^ATCGU]/g, '');
+
           if (!target) return;
-          
+
+
+
           const align = alignFn(query, target);
+
           if (align.alignLen > 0) {
-             hasAnyAlignment = true;
-             matchedRegions.push(label);
-             weightedIdentitySum += parseFloat(align.identity) * weight;
-             
-             const eVal = calculateEValue(align.score, align.qLen, align.sLen);
-             if (eVal < bestEvalue) bestEvalue = eVal;
-             
-             alignmentsHTML += buildAlignmentHTML(align, label, eVal);
+
+            hasAnyAlignment = true;
+
+            matchedRegions.push(label);
+
+            weightedIdentitySum += parseFloat(align.identity) * weight;
+
+
+
+            const eVal = calculateEValue(align.score, align.qLen, align.sLen);
+
+            if (eVal < bestEvalue) bestEvalue = eVal;
+
+
+
+            alignmentsHTML += buildAlignmentHTML(align, label, eVal);
+
           }
+
         });
+
+
 
         if ((rbcl || matk || its) && !hasAnyAlignment) return; // DB row has no DNA to match against the query
 
+
+
         let finalIdentity = 100;
+
         if (totalWeight > 0) {
-           finalIdentity = weightedIdentitySum / totalWeight;
+
+          finalIdentity = weightedIdentitySum / totalWeight;
+
         }
+
+
 
         // 3. Minimum Threshold Filter
+
         if ((rbcl || matk || its) && finalIdentity < threshold) return;
 
+
+
         let rowCopy = { ...row };
+
         rowCopy._identityNum = finalIdentity;
+
         rowCopy._eValue = bestEvalue;
+
         rowCopy._alignmentHTML = alignmentsHTML;
 
+
+
         if (hasAnyAlignment) {
+
           const identityKey = Object.keys(rowCopy).find(k => k.toLowerCase().includes('identity')) || 'Combined Identity';
+
           rowCopy[identityKey] = finalIdentity.toFixed(2) + '%';
-          
+
+
+
           const regionKey = Object.keys(rowCopy).find(k => k.toLowerCase().includes('region')) || 'Matched Barcode Region';
+
           rowCopy[regionKey] = matchedRegions.join(' + ');
+
         }
 
+
+
         matches.push(rowCopy);
+
       });
+
+
 
       // Sort by identity descending
+
       matches.sort((a, b) => b._identityNum - a._identityNum);
+
       matches.forEach(r => delete r._identityNum);
 
+
+
       displayResults(matches);
+
     }
+
+
 
     // Helper function to extract specific plant fields from Excel row dynamically
+
     function getFieldValue(row, possibleKeys) {
-      const foundKey = Object.keys(row).find(k => 
+
+      const foundKey = Object.keys(row).find(k =>
+
         possibleKeys.some(pk => k.toLowerCase().trim().includes(pk.toLowerCase()))
+
       );
+
       return foundKey ? row[foundKey] : null;
+
     }
+
+
 
     // 3. Render Search Output to both Views
+
     function displayResults(results) {
+
       const resultsCard = document.getElementById('resultsCard');
+
       const detailedContainer = document.getElementById('detailedViewContainer');
+
       const tableHeader = document.getElementById('tableHeader');
+
       const tableBody = document.getElementById('tableBody');
+
       const verdictBanner = document.getElementById('resultsVerdictBanner');
 
+
+
       detailedContainer.innerHTML = "";
+
       tableHeader.innerHTML = "";
+
       tableBody.innerHTML = "";
 
+
+
       if (results.length === 0) {
+
         resultsCard.style.display = "block";
+
         detailedContainer.innerHTML = "<p style='text-align:center; padding: 1rem;'>No matching records found.</p>";
+
         tableBody.innerHTML = "<tr><td colspan='100%' style='text-align:center;'>No matching records found.</td></tr>";
+
         verdictBanner.style.display = "none";
+
         return;
+
       }
+
+
 
       // 6. Result Verdict Banner
+
       const topHit = results[0];
+
       if (topHit._eValue !== undefined && topHit._eValue !== Infinity) {
-         let verdictHtml = '';
-         const pName = getFieldValue(topHit, ['name','plant','species','නම්']) || 'Unknown Plant';
-         const formattedEValue = topHit._eValue === 0 ? "0.0" : topHit._eValue.toExponential(2);
-         
-         if (topHit._eValue < 1e-30) {
-            verdictHtml = `<div style="background:#ecfdf5; color:#065f46; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #34d399;"><i class="fa-solid fa-circle-check" style="margin-right:8px;"></i> <strong>Confirmed Match:</strong> Top hit is <u>${pName}</u> with high statistical confidence (E-value: ${formattedEValue}).</div>`;
-         } else if (topHit._eValue < 1e-10) {
-            verdictHtml = `<div style="background:#fffbeb; color:#92400e; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #fbbf24;"><i class="fa-solid fa-circle-exclamation" style="margin-right:8px;"></i> <strong>Probable Match:</strong> Top hit is <u>${pName}</u> but with moderate confidence (E-value: ${formattedEValue}).</div>`;
-         } else {
-            verdictHtml = `<div style="background:#fef2f2; color:#991b1b; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #f87171;"><i class="fa-solid fa-circle-xmark" style="margin-right:8px;"></i> <strong>No Significant Match:</strong> Matches found are statistically weak (E-value > 1e-10) and likely random noise.</div>`;
-         }
-         verdictBanner.innerHTML = verdictHtml;
-         verdictBanner.style.display = "block";
+
+        let verdictHtml = '';
+
+        const pName = getFieldValue(topHit, ['name', 'plant', 'species', 'නම්']) || 'Unknown Plant';
+
+        const formattedEValue = topHit._eValue === 0 ? "0.0" : topHit._eValue.toExponential(2);
+
+
+
+        if (topHit._eValue < 1e-30) {
+
+          verdictHtml = `<div style="background:#ecfdf5; color:#065f46; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #34d399;"><i class="fa-solid fa-circle-check" style="margin-right:8px;"></i> <strong>Confirmed Match:</strong> Top hit is <u>${pName}</u> with high statistical confidence (E-value: ${formattedEValue}).</div>`;
+
+        } else if (topHit._eValue < 1e-10) {
+
+          verdictHtml = `<div style="background:#fffbeb; color:#92400e; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #fbbf24;"><i class="fa-solid fa-circle-exclamation" style="margin-right:8px;"></i> <strong>Probable Match:</strong> Top hit is <u>${pName}</u> but with moderate confidence (E-value: ${formattedEValue}).</div>`;
+
+        } else {
+
+          verdictHtml = `<div style="background:#fef2f2; color:#991b1b; width:100%; padding:16px 20px; border-radius:12px; border:2px solid #f87171;"><i class="fa-solid fa-circle-xmark" style="margin-right:8px;"></i> <strong>No Significant Match:</strong> Matches found are statistically weak (E-value > 1e-10) and likely random noise.</div>`;
+
+        }
+
+        verdictBanner.innerHTML = verdictHtml;
+
+        verdictBanner.style.display = "block";
+
       } else {
-         verdictBanner.style.display = "none";
+
+        verdictBanner.style.display = "none";
+
       }
+
+
 
       // --- Render Detailed View Cards ---
+
       results.forEach((row, idx) => {
-        const plantName      = getFieldValue(row, ['name','plant','species','නම්'])                     || 'Unknown Plant';
-        const description    = getFieldValue(row, ['description','wisthara','details','විස්තර'])         || 'N/A';
-        const regionalNames  = getFieldValue(row, ['regional name','pradeshaya','local name','ප්‍රදේශ']) || 'N/A';
-        const plantType      = getFieldValue(row, ['type','flower','sapushpa','category','සපුෂ්ප'])      || 'N/A';
-        const commercialValue= getFieldValue(row, ['commercial','value','economic','වාණිජ'])             || 'N/A';
-        const identityVal    = getFieldValue(row, ['identity']) || '';
-        const imageSrc = getFieldValue(row, ['image','photo','url','img','ඡායාරූප'])
-                               || 'https://placehold.co/56x56/d1fae5/0f2922?text=🌿';
-        const alignmentHTML  = row._alignmentHTML || '';
+
+        const plantName = getFieldValue(row, ['name', 'plant', 'species', 'නම්']) || 'Unknown Plant';
+
+        const description = getFieldValue(row, ['description', 'wisthara', 'details', 'විස්තර']) || 'N/A';
+
+        const regionalNames = getFieldValue(row, ['regional name', 'pradeshaya', 'local name', 'ප්‍රදේශ']) || 'N/A';
+
+        const plantType = getFieldValue(row, ['type', 'flower', 'sapushpa', 'category', 'සපුෂ්ප']) || 'N/A';
+
+        const commercialValue = getFieldValue(row, ['commercial', 'value', 'economic', 'වාණිජ']) || 'N/A';
+
+        const identityVal = getFieldValue(row, ['identity']) || '';
+
+        const imageSrc = getFieldValue(row, ['image', 'photo', 'url', 'img', 'ඡායාරූප'])
+
+          || 'https://placehold.co/56x56/d1fae5/0f2922?text=🌿';
+
+        const alignmentHTML = row._alignmentHTML || '';
+
         delete row._alignmentHTML;
 
+
+
         const cardId = `plant-card-${idx}`;
+
         const identityBadge = identityVal
-          ? `<span class="badge" style="background:${parseFloat(identityVal)>=90?'#d1fae5':parseFloat(identityVal)>=70?'#fef3c7':'#fee2e2'};color:${parseFloat(identityVal)>=90?'#065f46':parseFloat(identityVal)>=70?'#92400e':'#991b1b'};"><i class="fa-solid fa-chart-bar"></i> ${identityVal}</span>`
+
+          ? `<span class="badge" style="background:${parseFloat(identityVal) >= 90 ? '#d1fae5' : parseFloat(identityVal) >= 70 ? '#fef3c7' : '#fee2e2'};color:${parseFloat(identityVal) >= 90 ? '#065f46' : parseFloat(identityVal) >= 70 ? '#92400e' : '#991b1b'};"><i class="fa-solid fa-chart-bar"></i> ${identityVal}</span>`
+
           : '';
 
+
+
         const itemHtml = `
+
           <div class="plant-result-item">
+
             <div class="plant-summary-row" onclick="toggleCard('${cardId}')">
+
               <img src="${imageSrc}" class="plant-thumb" alt="${plantName}" onerror="this.src='https://placehold.co/56x56/d1fae5/0f2922?text=🌿'">
+
               <div class="plant-summary-info">
+
                 <h3>${plantName}</h3>
+
                 <div class="plant-summary-meta">
+
                   <span class="badge"><i class="fa-solid fa-seedling"></i> ${plantType}</span>
+
                   ${identityBadge}
+
                 </div>
+
               </div>
+
               <button class="expand-btn" id="btn-${cardId}">
+
                 <span>Details</span>
+
                 <span class="chevron">&#8964;</span>
+
               </button>
+
             </div>
+
             <div class="plant-body" id="${cardId}">
+
               <div class="plant-body-inner">
+
                 <div class="plant-details-grid">
+
                   <div class="detail-box">
+
                     <strong><i class="fa-solid fa-align-left"></i> Plant Description:</strong>
+
                     <span>${description}</span>
+
                   </div>
+
                   <div class="detail-box">
+
                     <strong><i class="fa-solid fa-map-location-dot"></i> Regional Names:</strong>
+
                     <span>${regionalNames}</span>
+
                   </div>
+
                   <div class="detail-box">
+
                     <strong><i class="fa-solid fa-coins"></i> Commercial Value:</strong>
+
                     <span>${commercialValue}</span>
+
                   </div>
+
                 </div>
+
                 ${alignmentHTML}
+
               </div>
+
             </div>
+
           </div>`;
+
         detailedContainer.innerHTML += itemHtml;
+
       });
+
+
 
       // --- Render Raw Excel Table View ---
+
       const headers = Object.keys(results[0]);
+
       headers.forEach(headerText => {
+
         const th = document.createElement('th');
+
         th.textContent = headerText;
+
         tableHeader.appendChild(th);
+
       });
+
+
 
       results.forEach(row => {
+
         const tr = document.createElement('tr');
+
         headers.forEach(header => {
+
           const td = document.createElement('td');
+
           td.textContent = row[header];
+
           tr.appendChild(td);
+
         });
+
         tableBody.appendChild(tr);
+
       });
 
+
+
       resultsCard.style.display = "block";
+
     }
+
+
 
     // Toggle collapsible card
+
     function toggleCard(cardId) {
+
       const body = document.getElementById(cardId);
-      const btn  = document.getElementById('btn-' + cardId);
+
+      const btn = document.getElementById('btn-' + cardId);
+
       if (!body) return;
+
       const isOpen = body.classList.contains('open');
+
       body.classList.toggle('open', !isOpen);
+
       btn.classList.toggle('open', !isOpen);
+
     }
+
+
 
     // Toggle view between Detailed and Table mode
+
     function switchView(viewType) {
+
       const detailedContainer = document.getElementById('detailedViewContainer');
+
       const tableContainer = document.getElementById('tableViewContainer');
+
       const btnDetailed = document.getElementById('btnDetailedView');
+
       const btnTable = document.getElementById('btnTableView');
 
+
+
       if (viewType === 'detailed') {
+
         detailedContainer.style.display = 'block';
+
         tableContainer.style.display = 'none';
+
         btnDetailed.classList.add('active');
+
         btnTable.classList.remove('active');
+
       } else {
+
         detailedContainer.style.display = 'none';
+
         tableContainer.style.display = 'block';
+
         btnTable.classList.add('active');
+
         btnDetailed.classList.remove('active');
+
       }
+
     }
+
+
+
+
 
 
 
   </script>
+
 </body>
+
 </html>
