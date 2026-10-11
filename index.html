@@ -1932,44 +1932,62 @@
 
 
 
-    // Load the CSV database from the same GitHub Pages folder as index.html.
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Load the CSV database with multi-path fallbacks (works on Live Server, file://, and GitHub Pages)
+    async function loadDatabase() {
       const icon = document.getElementById('dbStatusIcon');
       const text = document.getElementById('dbStatusText');
+      if (!icon || !text) return;
 
-      try {
-        const response = await fetch('./Cleaned_Plant_DNA_Barcoding_Data.csv', { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`CSV request failed: ${response.status}`);
+      const candidates = [
+        'Cleaned_Plant_DNA_Barcoding_Data.csv',
+        './Cleaned_Plant_DNA_Barcoding_Data.csv',
+        '/Cleaned_Plant_DNA_Barcoding_Data.csv',
+        'https://raw.githubusercontent.com/chathu1215/plant_dna/main/Cleaned_Plant_DNA_Barcoding_Data.csv'
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(url, { cache: 'no-store' });
+          if (!response.ok) continue;
+
+          const csvText = await response.text();
+          if (!csvText || csvText.trim().length === 0) continue;
+
+          // If PapaParse is still loading from CDN, wait briefly
+          if (typeof Papa === 'undefined') {
+            await new Promise(r => setTimeout(r, 200));
+          }
+
+          const parsed = Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: 'greedy',
+            transformHeader: header => header.replace(/\uFEFF/g, '').trim()
+          });
+
+          const rows = (parsed.data || []).filter(row =>
+            Object.values(row).some(value => String(value ?? '').trim() !== '')
+          );
+
+          if (rows.length > 0) {
+            excelDatabase = rows;
+            icon.className = 'db-status-icon active';
+            text.innerHTML = `Database Active: <span style="color:#059669;">Cleaned_Plant_DNA_Barcoding_Data.csv</span> <span class="subtext">(${excelDatabase.length} records loaded)</span>`;
+            return;
+          }
+        } catch (e) {
+          console.warn('Candidate fetch failed:', url, e);
         }
-
-        const csvText = await response.text();
-        const parsed = Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: 'greedy',
-          transformHeader: header => header.replace(/\uFEFF/g, '').trim()
-        });
-
-        if (parsed.errors && parsed.errors.length) {
-          console.warn('CSV parsing warnings:', parsed.errors);
-        }
-
-        excelDatabase = (parsed.data || []).filter(row =>
-          Object.values(row).some(value => String(value ?? '').trim() !== '')
-        );
-
-        if (!excelDatabase.length) {
-          throw new Error('The CSV file loaded but contains no data rows.');
-        }
-
-        icon.className = 'db-status-icon active';
-        text.innerHTML = `Database Active: <span style="color:#059669;">Cleaned_Plant_DNA_Barcoding_Data.csv</span> <span class="subtext">(${excelDatabase.length} records loaded)</span>`;
-      } catch (error) {
-        console.error('Error loading CSV database:', error);
-        icon.className = 'db-status-icon error';
-        text.innerHTML = `Database failed to load. <span class="subtext">Check that the CSV is in the same GitHub repository folder as index.html and the filename matches exactly.</span>`;
       }
-    });
+
+      icon.className = 'db-status-icon error';
+      text.innerHTML = `Database failed to load. <span class="subtext">Could not load Cleaned_Plant_DNA_Barcoding_Data.csv</span>`;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadDatabase);
+    } else {
+      loadDatabase();
+    }
 
     // ============================================================
 
