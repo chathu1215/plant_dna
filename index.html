@@ -1615,6 +1615,81 @@
       box-shadow: 0 8px 24px rgba(16,185,129,0.5);
     }
     #customAlertBtn:active { transform: scale(0.97); }
+
+    /* ── Search Loading Overlay & Spinner ── */
+    #searchLoadingOverlay {
+      display: none;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 16px;
+      margin-top: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    .dna-spinner {
+      display: inline-block;
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(16, 185, 129, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--accent-green);
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-pulse-text {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      letter-spacing: 0.02em;
+    }
+    .loading-subtext {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* ── Load More Results Button ── */
+    .load-more-container {
+      text-align: center;
+      margin-top: 1.8rem;
+      padding-top: 1rem;
+    }
+    .btn-load-more {
+      background: linear-gradient(135deg, #1b4332, #0f2922);
+      color: #fff;
+      border: 1.5px solid rgba(16, 185, 129, 0.4);
+      padding: 12px 32px;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 20px rgba(15, 41, 34, 0.18);
+    }
+    .btn-load-more:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #10b981;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+    }
+    .btn-load-more:active {
+      transform: scale(0.98);
+    }
+    .load-more-counter {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
   </style>
 
 </head>
@@ -1732,54 +1807,29 @@
 
 
 
-      <div style="display:flex; justify-content:space-between; margin-bottom:1.5rem; gap:1rem; flex-wrap:wrap;">
-
-        <div style="flex:1; min-width:250px;">
-
-          <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Alignment Mode
-            (Algorithm):</span>
-
-          <select id="alignmentMode"
-            style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
-
-            <option value="local">Local (Smith-Waterman) - Best for Partial Reads</option>
-
-            <option value="global">Global (Needleman-Wunsch) - Best for Full Genes</option>
-
-          </select>
-
-        </div>
-
-        <div style="flex:1; min-width:250px;">
-
-          <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Minimum
-            Identity Cutoff:</span>
-
-          <select id="identityThreshold"
-            style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
-
-            <option value="70">70% (Default Filter)</option>
-
-            <option value="90">90% (Strict Match)</option>
-
-            <option value="50">50% (Lenient Match)</option>
-
-            <option value="0">0% (Show All Results)</option>
-
-          </select>
-
-        </div>
-
+      <div style="margin-bottom:1.5rem;">
+        <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Minimum Identity Cutoff:</span>
+        <select id="identityThreshold"
+          style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
+          <option value="70">70% (Default Filter)</option>
+          <option value="90">90% (Strict Match)</option>
+          <option value="50">50% (Lenient Match)</option>
+          <option value="0">0% (Show All Results)</option>
+        </select>
       </div>
 
 
 
-      <button class="btn-search" onclick="performDnaSearch()">
-
+      <button class="btn-search" id="btnAnalyzeDna" onclick="performDnaSearch()">
         <i class="fa-solid fa-microscope"></i> Analyze & Match DNA
-
       </button>
 
+      <!-- Loading Overlay -->
+      <div id="searchLoadingOverlay">
+        <div class="dna-spinner"></div>
+        <div class="loading-pulse-text">Analyzing & Aligning DNA Sequences...</div>
+        <div class="loading-subtext">Running high-accuracy global alignment against database records</div>
+      </div>
     </div>
 
 
@@ -1811,8 +1861,15 @@
 
 
       <!-- Container for Detailed Cards -->
-
       <div id="detailedViewContainer"></div>
+
+      <!-- Load More Container -->
+      <div id="loadMoreContainer" class="load-more-container" style="display:none;">
+        <button class="btn-load-more" id="btnLoadMore" onclick="loadMoreCards()">
+          <i class="fa-solid fa-angles-down"></i> Load More Results
+        </button>
+        <span class="load-more-counter" id="loadMoreCounter"></span>
+      </div>
 
 
 
@@ -2450,170 +2507,148 @@
 
 
 
-      const mode = document.getElementById('alignmentMode').value;
+    // State for chunked results pagination
+    let currentSearchResults = [];
+    let currentRenderedIndex = 0;
+    const CARDS_PER_PAGE = 5;
+
+    // 2. Perform Excel Matching / Search logic (Async with animation)
+    function performDnaSearch() {
+      const scientificName = document.getElementById('scientificNameInput').value.trim().toUpperCase();
+      const rawRbcl = document.getElementById('rbclInput').value.trim().toUpperCase();
+      const rawMatk = document.getElementById('matkInput').value.trim().toUpperCase();
+      const rawIts = document.getElementById('itsInput').value.trim().toUpperCase();
+
+      if (excelDatabase.length === 0) {
+        showAlert('Database Not Loaded', 'The plant CSV database has not loaded yet.\nPlease refresh the page or check the CSV file.', '🗄️');
+        return;
+      }
+
+      if (!scientificName && !rawRbcl && !rawMatk && !rawIts) {
+        showAlert('Search Criteria Required', 'Please enter at least one search criteria.\nTry entering a Scientific Name or a DNA sequence.', '🔍');
+        return;
+      }
+
+      // Sequence Validation
+      const invalidRegex = /[^ATCGU\s-]/;
+      if (invalidRegex.test(rawRbcl) || invalidRegex.test(rawMatk) || invalidRegex.test(rawIts)) {
+        showAlert('Invalid DNA Sequence', 'Invalid characters detected in DNA sequence!\nOnly A, T, C, G, U are allowed.', '🧬');
+        return;
+      }
+
+      const rbcl = rawRbcl.replace(/[^ATCGU]/g, '');
+      const matk = rawMatk.replace(/[^ATCGU]/g, '');
+      const its = rawIts.replace(/[^ATCGU]/g, '');
 
       const threshold = parseFloat(document.getElementById('identityThreshold').value);
+      // High-accuracy Global Needleman-Wunsch algorithm with coverage-normalized identity
+      const alignFn = needlemanWunsch;
 
-      const alignFn = mode === 'local' ? smithWaterman : needlemanWunsch;
+      // Show loading spinner & hide previous results while computing
+      const searchBtn = document.getElementById('btnAnalyzeDna');
+      const loadingOverlay = document.getElementById('searchLoadingOverlay');
+      const resultsCard = document.getElementById('resultsCard');
 
+      searchBtn.disabled = true;
+      searchBtn.style.opacity = '0.6';
+      searchBtn.style.pointerEvents = 'none';
+      loadingOverlay.style.display = 'block';
+      resultsCard.style.display = 'none';
 
+      // Use setTimeout to yield execution so the UI thread renders the spinner smoothly
+      setTimeout(() => {
+        let matches = [];
 
-      let matches = [];
-
-
-
-      excelDatabase.forEach(row => {
-
-        if (scientificName) {
-          const val = getFieldValue(row, ['Scientific Name', 'scientific name', 'Common Name', 'common name', 'Genus', 'Species']);
-          if (!val || !String(val).toUpperCase().includes(scientificName)) return;
-        }
-
-
-
-        // 1. Multi-marker Combined Score
-
-        let totalWeight = 0;
-
-        let weightedIdentitySum = 0;
-
-        let alignmentsHTML = '';
-
-        let bestEvalue = Infinity;
-
-        let hasAnyAlignment = false;
-
-        let matchedRegions = [];
-
-
-
-        const queries = [
-          { query: rbcl, keys: ['DNA Sequence (rbcL)', 'dna sequence (rbcl)', 'rbcl', 'rbcL sequence', 'rbc-l'], label: 'rbcL', weight: 40 },
-          { query: matk, keys: ['DNA Sequence (matK)', 'dna sequence (matk)', 'matk', 'matK sequence', 'mat-k'], label: 'matK', weight: 40 },
-          { query: its,  keys: ['DNA Sequence (ITS)',  'dna sequence (its)',  'its',  'ITS sequence',  'its region'],  label: 'ITS',  weight: 20 },
-        ];
-
-
-
-        queries.forEach(({ query, keys, label, weight }) => {
-
-          if (!query) return;
-
-          totalWeight += weight; // Adjust total weight dynamically based on what user entered
-
-
-
-          const rawVal = getFieldValue(row, keys) || '';
-
-          const target = String(rawVal).toUpperCase().replace(/[^ATCGU]/g, '');
-
-          if (!target) return;
-
-
-
-          const align = alignFn(query, target);
-
-          if (align.alignLen > 0) {
-
-            hasAnyAlignment = true;
-
-            matchedRegions.push(label);
-
-            weightedIdentitySum += parseFloat(align.identity) * weight;
-
-
-
-            const eVal = calculateEValue(align.score, align.qLen, align.sLen);
-
-            if (eVal < bestEvalue) bestEvalue = eVal;
-
-
-
-            alignmentsHTML += buildAlignmentHTML(align, label, eVal);
-
+        excelDatabase.forEach(row => {
+          if (scientificName) {
+            const val = getFieldValue(row, ['Scientific Name', 'scientific name', 'Common Name', 'common name', 'Genus', 'Species']);
+            if (!val || !String(val).toUpperCase().includes(scientificName)) return;
           }
 
+          // Multi-marker Combined Score
+          let totalWeight = 0;
+          let weightedIdentitySum = 0;
+          let alignmentsHTML = '';
+          let bestEvalue = Infinity;
+          let hasAnyAlignment = false;
+          let matchedRegions = [];
+
+          const queries = [
+            { query: rbcl, keys: ['DNA Sequence (rbcL)', 'dna sequence (rbcl)', 'rbcl', 'rbcL sequence', 'rbc-l'], label: 'rbcL', weight: 40 },
+            { query: matk, keys: ['DNA Sequence (matK)', 'dna sequence (matk)', 'matk', 'matK sequence', 'mat-k'], label: 'matK', weight: 40 },
+            { query: its,  keys: ['DNA Sequence (ITS)',  'dna sequence (its)',  'its',  'ITS sequence',  'its region'],  label: 'ITS',  weight: 20 },
+          ];
+
+          queries.forEach(({ query, keys, label, weight }) => {
+            if (!query) return;
+            totalWeight += weight;
+
+            const rawVal = getFieldValue(row, keys) || '';
+            const target = String(rawVal).toUpperCase().replace(/[^ATCGU]/g, '');
+            if (!target) return;
+
+            const align = alignFn(query, target);
+            if (align.alignLen > 0) {
+              hasAnyAlignment = true;
+              matchedRegions.push(label);
+              weightedIdentitySum += parseFloat(align.identity) * weight;
+
+              const eVal = calculateEValue(align.score, align.qLen, align.sLen);
+              if (eVal < bestEvalue) bestEvalue = eVal;
+
+              alignmentsHTML += buildAlignmentHTML(align, label, eVal);
+            }
+          });
+
+          if ((rbcl || matk || its) && !hasAnyAlignment) return;
+
+          let finalIdentity = 100;
+          if (totalWeight > 0) {
+            finalIdentity = weightedIdentitySum / totalWeight;
+          }
+
+          // Minimum Threshold Filter
+          if ((rbcl || matk || its) && finalIdentity < threshold) return;
+
+          let rowCopy = { ...row };
+          rowCopy._identityNum = finalIdentity;
+          rowCopy._eValue = bestEvalue;
+          rowCopy._alignmentHTML = alignmentsHTML;
+
+          if (hasAnyAlignment) {
+            const identityKey = Object.keys(rowCopy).find(k => k.toLowerCase().includes('identity')) || 'Combined Identity';
+            rowCopy[identityKey] = finalIdentity.toFixed(2) + '%';
+
+            const regionKey = Object.keys(rowCopy).find(k => k.toLowerCase().includes('region')) || 'Matched Barcode Region';
+            rowCopy[regionKey] = matchedRegions.join(' + ');
+          }
+
+          matches.push(rowCopy);
         });
 
+        // Sort by identity descending
+        matches.sort((a, b) => b._identityNum - a._identityNum);
+        matches.forEach(r => delete r._identityNum);
 
+        // Hide loading spinner & re-enable button
+        loadingOverlay.style.display = 'none';
+        searchBtn.disabled = false;
+        searchBtn.style.opacity = '1';
+        searchBtn.style.pointerEvents = 'all';
 
-        if ((rbcl || matk || its) && !hasAnyAlignment) return; // DB row has no DNA to match against the query
-
-
-
-        let finalIdentity = 100;
-
-        if (totalWeight > 0) {
-
-          finalIdentity = weightedIdentitySum / totalWeight;
-
-        }
-
-
-
-        // 3. Minimum Threshold Filter
-
-        if ((rbcl || matk || its) && finalIdentity < threshold) return;
-
-
-
-        let rowCopy = { ...row };
-
-        rowCopy._identityNum = finalIdentity;
-
-        rowCopy._eValue = bestEvalue;
-
-        rowCopy._alignmentHTML = alignmentsHTML;
-
-
-
-        if (hasAnyAlignment) {
-
-          const identityKey = Object.keys(rowCopy).find(k => k.toLowerCase().includes('identity')) || 'Combined Identity';
-
-          rowCopy[identityKey] = finalIdentity.toFixed(2) + '%';
-
-
-
-          const regionKey = Object.keys(rowCopy).find(k => k.toLowerCase().includes('region')) || 'Matched Barcode Region';
-
-          rowCopy[regionKey] = matchedRegions.join(' + ');
-
-        }
-
-
-
-        matches.push(rowCopy);
-
-      });
-
-
-
-      // Sort by identity descending
-
-      matches.sort((a, b) => b._identityNum - a._identityNum);
-
-      matches.forEach(r => delete r._identityNum);
-
-
-
-      displayResults(matches);
-
+        displayResults(matches);
+      }, 50);
     }
-
-
 
     // Helper function to extract specific plant fields from Excel / CSV row dynamically
     function getFieldValue(row, possibleKeys) {
       if (!row) return null;
-      // 1. Try exact case-insensitive match first
       for (const pk of possibleKeys) {
         const exactKey = Object.keys(row).find(k => k.trim().toLowerCase() === pk.trim().toLowerCase());
         if (exactKey && row[exactKey] !== undefined && row[exactKey] !== null && String(row[exactKey]).trim() !== '') {
           return String(row[exactKey]).trim();
         }
       }
-      // 2. Try substring match
       for (const pk of possibleKeys) {
         const subKey = Object.keys(row).find(k => k.trim().toLowerCase().includes(pk.trim().toLowerCase()));
         if (subKey && row[subKey] !== undefined && row[subKey] !== null && String(row[subKey]).trim() !== '') {
@@ -2623,6 +2658,139 @@
       return null;
     }
 
+    // Render single detailed card HTML string
+    function renderCardHTML(row, idx) {
+      const scientificName  = getFieldValue(row, ['Scientific Name', 'scientific name', 'name', 'ශාකයේ නම']) || 'Unknown Plant';
+      const commonName      = getFieldValue(row, ['Common Name', 'common name', 'local name', 'පොදු නම']) || 'N/A';
+      const family          = getFieldValue(row, ['Family', 'family', 'කුලය']) || 'N/A';
+      const species         = getFieldValue(row, ['Species', 'species', 'විශේෂය']) || 'N/A';
+      const plantType       = getFieldValue(row, ['Plant Type / Growth Form', 'plant type / growth form', 'Plant Type', 'Growth Form', 'type']) || 'N/A';
+      const description     = getFieldValue(row, ['Plant Description', 'plant description', 'description', 'wisthara', 'විස්තර']) || 'N/A';
+      const morphology      = getFieldValue(row, ['Morphological Features', 'morphological features', 'morphology']) || 'N/A';
+      const distribution    = getFieldValue(row, ['Distribution', 'distribution', 'regional name', 'pradeshaya', 'ව්‍යාප්තිය']) || 'N/A';
+      const habitat         = getFieldValue(row, ['Habitat', 'habitat', 'වාසස්ථාන']) || 'N/A';
+      const climateSoil     = getFieldValue(row, ['Climate & Soil Requirements', 'climate & soil requirements', 'climate & soil', 'climate', 'soil']) || 'N/A';
+      const uses            = getFieldValue(row, ['Uses', 'uses', 'commercial', 'economic', 'වාණිජ']) || 'N/A';
+      const traditionalUses = getFieldValue(row, ['Traditional Uses (Sri Lanka)', 'traditional uses (sri lanka)', 'traditional uses', 'traditional']) || 'N/A';
+      const phytochemicals  = getFieldValue(row, ['Key Phytochemicals', 'key phytochemicals', 'phytochemicals']) || 'N/A';
+      const identityVal     = getFieldValue(row, ['identity']) || '';
+
+      const rawImg = getFieldValue(row, ['Plant Images', 'plant images', 'image', 'photo', 'url', 'img', 'ඡායාරූප']);
+      let imageSrc = '';
+      if (rawImg && rawImg !== 'Not provided' && rawImg.trim() !== '' && (rawImg.startsWith('http') || rawImg.startsWith('./') || rawImg.includes('.'))) {
+        imageSrc = rawImg.trim();
+      } else {
+        imageSrc = `${scientificName}.jpg`;
+      }
+
+      const alignmentHTML = row._alignmentHTML || '';
+      const cardId = `plant-card-${idx}`;
+      const identityBadge = identityVal
+        ? `<span class="badge" style="background:${parseFloat(identityVal) >= 90 ? '#d1fae5' : parseFloat(identityVal) >= 70 ? '#fef3c7' : '#fee2e2'};color:${parseFloat(identityVal) >= 90 ? '#065f46' : parseFloat(identityVal) >= 70 ? '#92400e' : '#991b1b'};"><i class="fa-solid fa-chart-bar"></i> ${identityVal}</span>`
+        : '';
+
+      return `
+        <div class="plant-result-item">
+          <div class="plant-summary-row" onclick="toggleCard('${cardId}')">
+            <img src="${imageSrc}" class="plant-thumb" alt="${scientificName}" onerror="this.onerror=null; this.src='https://placehold.co/56x56/d1fae5/0f2922?text=🌿';">
+            <div class="plant-summary-info">
+              <h3>${scientificName}</h3>
+              ${commonName !== 'N/A' ? `<div class="plant-summary-subtitle"><i class="fa-solid fa-signature"></i> ${commonName}</div>` : ''}
+              <div class="plant-summary-meta">
+                <span class="badge"><i class="fa-solid fa-seedling"></i> ${plantType}</span>
+                ${family !== 'N/A' ? `<span class="badge" style="background:#e0e7ff; color:#3730a3;"><i class="fa-solid fa-sitemap"></i> ${family}</span>` : ''}
+                ${identityBadge}
+              </div>
+            </div>
+            <button class="expand-btn" id="btn-${cardId}">
+              <span>Details</span>
+              <span class="chevron">&#8964;</span>
+            </button>
+          </div>
+          <div class="plant-body" id="${cardId}">
+            <div class="plant-body-inner">
+              <div class="plant-details-grid">
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-tag"></i> Scientific Name:</strong>
+                  <span><em>${scientificName}</em></span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-signature"></i> Common Name:</strong>
+                  <span>${commonName}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-sitemap"></i> Family:</strong>
+                  <span>${family}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-dna"></i> Species:</strong>
+                  <span>${species}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-seedling"></i> Plant Type / Growth Form:</strong>
+                  <span>${plantType}</span>
+                </div>
+                <div class="detail-box full-width">
+                  <strong><i class="fa-solid fa-align-left"></i> Plant Description:</strong>
+                  <span>${description}</span>
+                </div>
+                <div class="detail-box full-width">
+                  <strong><i class="fa-solid fa-leaf"></i> Morphological Features:</strong>
+                  <span>${morphology}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-earth-asia"></i> Distribution:</strong>
+                  <span>${distribution}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-mountain-sun"></i> Habitat:</strong>
+                  <span>${habitat}</span>
+                </div>
+                <div class="detail-box full-width">
+                  <strong><i class="fa-solid fa-cloud-sun-rain"></i> Climate & Soil Requirements:</strong>
+                  <span>${climateSoil}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-hand-holding-heart"></i> Uses:</strong>
+                  <span>${uses}</span>
+                </div>
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-mortar-pestle"></i> Traditional Uses (Sri Lanka):</strong>
+                  <span>${traditionalUses}</span>
+                </div>
+                <div class="detail-box full-width">
+                  <strong><i class="fa-solid fa-flask-vial"></i> Key Phytochemicals:</strong>
+                  <span>${phytochemicals}</span>
+                </div>
+              </div>
+              ${alignmentHTML}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // Load next batch of cards smoothly
+    function loadMoreCards() {
+      const detailedContainer = document.getElementById('detailedViewContainer');
+      const loadMoreContainer = document.getElementById('loadMoreContainer');
+      const loadMoreCounter = document.getElementById('loadMoreCounter');
+
+      const nextBatch = currentSearchResults.slice(currentRenderedIndex, currentRenderedIndex + CARDS_PER_PAGE);
+      let html = '';
+      nextBatch.forEach((row, idx) => {
+        html += renderCardHTML(row, currentRenderedIndex + idx);
+      });
+      detailedContainer.insertAdjacentHTML('beforeend', html);
+      currentRenderedIndex += nextBatch.length;
+
+      if (currentRenderedIndex >= currentSearchResults.length) {
+        loadMoreContainer.style.display = 'none';
+      } else {
+        loadMoreContainer.style.display = 'block';
+        loadMoreCounter.textContent = `Showing ${currentRenderedIndex} of ${currentSearchResults.length} records`;
+      }
+    }
+
     // 3. Render Search Output to both Views
     function displayResults(results) {
       const resultsCard = document.getElementById('resultsCard');
@@ -2630,20 +2798,22 @@
       const tableHeader = document.getElementById('tableHeader');
       const tableBody = document.getElementById('tableBody');
       const verdictBanner = document.getElementById('resultsVerdictBanner');
+      const loadMoreContainer = document.getElementById('loadMoreContainer');
 
       detailedContainer.innerHTML = "";
       tableHeader.innerHTML = "";
       tableBody.innerHTML = "";
+      loadMoreContainer.style.display = "none";
 
       if (results.length === 0) {
         resultsCard.style.display = "block";
-        detailedContainer.innerHTML = "<p style='text-align:center; padding: 1rem;'>No matching records found.</p>";
-        tableBody.innerHTML = "<tr><td colspan='100%' style='text-align:center;'>No matching records found.</td></tr>";
+        detailedContainer.innerHTML = "<p style='text-align:center; padding: 2rem; color:#6b7280; font-weight:600;'><i class='fa-solid fa-circle-info' style='margin-right:8px;'></i> No matching records found.</p>";
+        tableBody.innerHTML = "<tr><td colspan='100%' style='text-align:center; padding: 2rem;'>No matching records found.</td></tr>";
         verdictBanner.style.display = "none";
         return;
       }
 
-      // 6. Result Verdict Banner
+      // Result Verdict Banner
       const topHit = results[0];
       if (topHit._eValue !== undefined && topHit._eValue !== Infinity) {
         let verdictHtml = '';
@@ -2663,172 +2833,32 @@
         verdictBanner.style.display = "none";
       }
 
-      // --- Render Detailed View Cards ---
-      results.forEach((row, idx) => {
-        // Extract all requested detailed fields
-        const scientificName  = getFieldValue(row, ['Scientific Name', 'scientific name', 'name', 'ශාකයේ නම']) || 'Unknown Plant';
-        const commonName      = getFieldValue(row, ['Common Name', 'common name', 'local name', 'පොදු නම']) || 'N/A';
-        const family          = getFieldValue(row, ['Family', 'family', 'කුලය']) || 'N/A';
-        const species         = getFieldValue(row, ['Species', 'species', 'විශේෂය']) || 'N/A';
-        const plantType       = getFieldValue(row, ['Plant Type / Growth Form', 'plant type / growth form', 'Plant Type', 'Growth Form', 'type']) || 'N/A';
-        const description     = getFieldValue(row, ['Plant Description', 'plant description', 'description', 'wisthara', 'විස්තර']) || 'N/A';
-        const morphology      = getFieldValue(row, ['Morphological Features', 'morphological features', 'morphology']) || 'N/A';
-        const distribution    = getFieldValue(row, ['Distribution', 'distribution', 'regional name', 'pradeshaya', 'ව්‍යාප්තිය']) || 'N/A';
-        const habitat         = getFieldValue(row, ['Habitat', 'habitat', 'වාසස්ථාන']) || 'N/A';
-        const climateSoil     = getFieldValue(row, ['Climate & Soil Requirements', 'climate & soil requirements', 'climate & soil', 'climate', 'soil']) || 'N/A';
-        const uses            = getFieldValue(row, ['Uses', 'uses', 'commercial', 'economic', 'වාණිජ']) || 'N/A';
-        const traditionalUses = getFieldValue(row, ['Traditional Uses (Sri Lanka)', 'traditional uses (sri lanka)', 'traditional uses', 'traditional']) || 'N/A';
-        const phytochemicals  = getFieldValue(row, ['Key Phytochemicals', 'key phytochemicals', 'phytochemicals']) || 'N/A';
-        const identityVal     = getFieldValue(row, ['identity']) || '';
+      // Store results and render initial chunk (cards 0 to 5)
+      currentSearchResults = results;
+      currentRenderedIndex = 0;
+      loadMoreCards();
 
-        // Resolve Image Source
-        const rawImg = getFieldValue(row, ['Plant Images', 'plant images', 'image', 'photo', 'url', 'img', 'ඡායාරූප']);
-        let imageSrc = '';
-        if (rawImg && rawImg !== 'Not provided' && rawImg.trim() !== '' && (rawImg.startsWith('http') || rawImg.startsWith('./') || rawImg.includes('.'))) {
-          imageSrc = rawImg.trim();
-        } else {
-          imageSrc = `${scientificName}.jpg`;
-        }
-
-        const alignmentHTML = row._alignmentHTML || '';
-        delete row._alignmentHTML;
-
-        const cardId = `plant-card-${idx}`;
-        const identityBadge = identityVal
-          ? `<span class="badge" style="background:${parseFloat(identityVal) >= 90 ? '#d1fae5' : parseFloat(identityVal) >= 70 ? '#fef3c7' : '#fee2e2'};color:${parseFloat(identityVal) >= 90 ? '#065f46' : parseFloat(identityVal) >= 70 ? '#92400e' : '#991b1b'};"><i class="fa-solid fa-chart-bar"></i> ${identityVal}</span>`
-          : '';
-
-        const itemHtml = `
-          <div class="plant-result-item">
-            <div class="plant-summary-row" onclick="toggleCard('${cardId}')">
-              <img src="${imageSrc}" class="plant-thumb" alt="${scientificName}" onerror="this.onerror=null; this.src='https://placehold.co/56x56/d1fae5/0f2922?text=🌿';">
-              <div class="plant-summary-info">
-                <h3>${scientificName}</h3>
-                ${commonName !== 'N/A' ? `<div class="plant-summary-subtitle"><i class="fa-solid fa-signature"></i> ${commonName}</div>` : ''}
-                <div class="plant-summary-meta">
-                  <span class="badge"><i class="fa-solid fa-seedling"></i> ${plantType}</span>
-                  ${family !== 'N/A' ? `<span class="badge" style="background:#e0e7ff; color:#3730a3;"><i class="fa-solid fa-sitemap"></i> ${family}</span>` : ''}
-                  ${identityBadge}
-                </div>
-              </div>
-              <button class="expand-btn" id="btn-${cardId}">
-                <span>Details</span>
-                <span class="chevron">&#8964;</span>
-              </button>
-            </div>
-            <div class="plant-body" id="${cardId}">
-              <div class="plant-body-inner">
-                <div class="plant-details-grid">
-                  <!-- 1. Taxonomic Profile -->
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-tag"></i> Scientific Name:</strong>
-                    <span><em>${scientificName}</em></span>
-                  </div>
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-signature"></i> Common Name:</strong>
-                    <span>${commonName}</span>
-                  </div>
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-sitemap"></i> Family:</strong>
-                    <span>${family}</span>
-                  </div>
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-dna"></i> Species:</strong>
-                    <span>${species}</span>
-                  </div>
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-seedling"></i> Plant Type / Growth Form:</strong>
-                    <span>${plantType}</span>
-                  </div>
-
-                  <!-- 2. Botanical Descriptions -->
-                  <div class="detail-box full-width">
-                    <strong><i class="fa-solid fa-align-left"></i> Plant Description:</strong>
-                    <span>${description}</span>
-                  </div>
-                  <div class="detail-box full-width">
-                    <strong><i class="fa-solid fa-leaf"></i> Morphological Features:</strong>
-                    <span>${morphology}</span>
-                  </div>
-
-                  <!-- 3. Distribution & Habitat -->
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-earth-asia"></i> Distribution:</strong>
-                    <span>${distribution}</span>
-                  </div>
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-mountain-sun"></i> Habitat:</strong>
-                    <span>${habitat}</span>
-                  </div>
-                  <div class="detail-box full-width">
-                    <strong><i class="fa-solid fa-cloud-sun-rain"></i> Climate & Soil Requirements:</strong>
-                    <span>${climateSoil}</span>
-                  </div>
-
-                  <!-- 4. Uses & Phytochemistry -->
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-hand-holding-heart"></i> Uses:</strong>
-                    <span>${uses}</span>
-                  </div>
-                  <div class="detail-box">
-                    <strong><i class="fa-solid fa-mortar-pestle"></i> Traditional Uses (Sri Lanka):</strong>
-                    <span>${traditionalUses}</span>
-                  </div>
-                  <div class="detail-box full-width">
-                    <strong><i class="fa-solid fa-flask-vial"></i> Key Phytochemicals:</strong>
-                    <span>${phytochemicals}</span>
-                  </div>
-                </div>
-                ${alignmentHTML}
-              </div>
-            </div>
-          </div>`;
-        detailedContainer.innerHTML += itemHtml;
-      });
-
-
-
-      // --- Render Raw Excel Table View ---
-
-      const headers = Object.keys(results[0]);
-
+      // Render Raw Excel Table View (Table items)
+      const headers = Object.keys(results[0]).filter(k => !k.startsWith('_'));
       headers.forEach(headerText => {
-
         const th = document.createElement('th');
-
         th.textContent = headerText;
-
         tableHeader.appendChild(th);
-
       });
-
-
 
       results.forEach(row => {
-
         const tr = document.createElement('tr');
-
         headers.forEach(header => {
-
           const td = document.createElement('td');
-
-          td.textContent = row[header];
-
+          td.textContent = row[header] || '';
           tr.appendChild(td);
-
         });
-
         tableBody.appendChild(tr);
-
       });
 
-
-
       resultsCard.style.display = "block";
-
+      resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-
-
 
     // Toggle collapsible card
 
