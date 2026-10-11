@@ -1497,6 +1497,10 @@
       background: #34d399;
     }
 
+    .legend-dot.ambiguous {
+      background: #38bdf8;
+    }
+
     .legend-dot.mismatch {
       background: #f87171;
     }
@@ -1990,133 +1994,122 @@
     }
 
     // ============================================================
+    // DNA Utilities: FASTA Parser, Sanitizer & Reverse Complement
+    // ============================================================
 
-    //  Needleman-Wunsch Global Alignment (industry-standard BLAST)
+    // Computes reverse complement of DNA sequence (supports IUPAC codes: A,T,C,G,U,N,R,Y,S,W,K,M,B,D,H,V)
+    function getReverseComplement(seq) {
+      if (!seq) return '';
+      const compMap = {
+        'A': 'T', 'T': 'A', 'U': 'A', 'C': 'G', 'G': 'C',
+        'N': 'N', 'R': 'Y', 'Y': 'R', 'S': 'S', 'W': 'W',
+        'K': 'M', 'M': 'K', 'B': 'V', 'V': 'B', 'D': 'H', 'H': 'D'
+      };
+      return seq.split('').reverse().map(b => compMap[b] || b).join('');
+    }
 
+    // Strips FASTA definition headers (>...), coordinates/numbers, and whitespace.
+    // Validates against IUPAC standard nucleotide codes: A, T, C, G, U, N, and degenerate bases.
+    function extractDnaSequence(raw) {
+      if (!raw || typeof raw !== 'string') return { sequence: '', isValid: true };
+      const lines = raw.split(/\r?\n/).filter(line => !line.trim().startsWith('>'));
+      const cleaned = lines.join('').replace(/[\s\d]/g, '').toUpperCase();
+      if (cleaned.length === 0) return { sequence: '', isValid: true };
+
+      // Check for illegal non-nucleotide characters
+      const invalidChars = cleaned.replace(/[ATCGUNRYSWKMBDHV-]/g, '');
+      if (invalidChars.length > 0) {
+        return { sequence: '', isValid: false, invalidChars: invalidChars.slice(0, 5) };
+      }
+
+      return { sequence: cleaned.replace(/-/g, ''), isValid: true };
+    }
+
+    // ============================================================
+    //  Needleman-Wunsch Global Alignment (with N & Ambiguity support)
     // ============================================================
 
     function needlemanWunsch(seq1, seq2) {
-
       const MATCH = 2;
-
+      const AMBIGUOUS_MATCH = 1;
       const MISMATCH = -1;
-
       const GAP = -2;
 
-      const m = seq1.length, n = seq2.length;
-
-
-
       // Cap sequences to avoid freezing on huge inputs (>2000 bases each)
-
       const s1 = seq1.substring(0, 2000);
-
       const s2 = seq2.substring(0, 2000);
-
       const M = s1.length, N = s2.length;
+      if (M === 0 || N === 0) {
+        return { a1: '', a2: '', middle: '', matches: 0, mismatches: 0, gaps: 0, alignLen: 0, identity: "0.00", score: 0, qLen: M, sLen: N };
+      }
 
-
+      function baseScore(c1, c2) {
+        if (c1 === c2) return MATCH;
+        if (c1 === 'N' || c2 === 'N') return AMBIGUOUS_MATCH;
+        return MISMATCH;
+      }
 
       // Build scoring matrix
-
       const dp = Array.from({ length: M + 1 }, () => new Int16Array(N + 1));
-
       for (let i = 0; i <= M; i++) dp[i][0] = i * GAP;
-
       for (let j = 0; j <= N; j++) dp[0][j] = j * GAP;
 
-
-
       for (let i = 1; i <= M; i++) {
-
         for (let j = 1; j <= N; j++) {
-
-          const score = s1[i - 1] === s2[j - 1] ? MATCH : MISMATCH;
-
+          const score = baseScore(s1[i - 1], s2[j - 1]);
           dp[i][j] = Math.max(
-
             dp[i - 1][j - 1] + score,
-
             dp[i - 1][j] + GAP,
-
             dp[i][j - 1] + GAP
-
           );
-
         }
-
       }
-
-
 
       // Traceback
-
       let a1 = '', a2 = '', middle = '';
-
       let i = M, j = N;
-
       while (i > 0 || j > 0) {
+        const c1 = i > 0 ? s1[i - 1] : '';
+        const c2 = j > 0 ? s2[j - 1] : '';
+        const score = (i > 0 && j > 0) ? baseScore(c1, c2) : MISMATCH;
 
-        if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + (s1[i - 1] === s2[j - 1] ? MATCH : MISMATCH)) {
-
-          a1 = s1[i - 1] + a1;
-
-          a2 = s2[j - 1] + a2;
-
-          middle = (s1[i - 1] === s2[j - 1] ? '|' : '.') + middle;
-
+        if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + score) {
+          a1 = c1 + a1;
+          a2 = c2 + a2;
+          middle = (c1 === c2 ? '|' : (c1 === 'N' || c2 === 'N' ? ':' : '.')) + middle;
           i--; j--;
-
         } else if (i > 0 && dp[i][j] === dp[i - 1][j] + GAP) {
-
-          a1 = s1[i - 1] + a1;
-
+          a1 = c1 + a1;
           a2 = '-' + a2;
-
           middle = ' ' + middle;
-
           i--;
-
         } else {
-
           a1 = '-' + a1;
-
-          a2 = s2[j - 1] + a2;
-
+          a2 = c2 + a2;
           middle = ' ' + middle;
-
           j--;
-
         }
-
       }
 
-
-
       // Calculate stats
-
       let matches = 0, mismatches = 0, gaps = 0;
-
       for (let k = 0; k < a1.length; k++) {
-
         if (a1[k] === '-' || a2[k] === '-') gaps++;
-
-        else if (a1[k] === a2[k]) matches++;
-
+        else if (a1[k] === a2[k] || a1[k] === 'N' || a2[k] === 'N') matches++;
         else mismatches++;
-
       }
 
       const alignLen = a1.length;
-
-      // In DNA Barcoding, query sequences (e.g. Sanger reads ~550bp) are often shorter than full chloroplast reference genes in DB (~1366bp).
-      // Standard Needleman-Wunsch with (matches / alignLen) severely punishes length discrepancies with trailing gaps.
-      // Dividing by min(M, N) computes true coverage-normalized identity so the correct plant is identified regardless of read length.
-      const effectiveLength = Math.min(M, N);
-      const identity = effectiveLength > 0 ? (matches / effectiveLength * 100).toFixed(2) : "0.00";
+      // Normalizing by min(M, N) calculates true coverage-normalized identity when alignment has a positive score
+      let identity = "0.00";
+      if (dp[M][N] > 0) {
+        const effectiveLength = Math.min(M, N);
+        identity = ((matches / effectiveLength) * 100).toFixed(2);
+      } else {
+        identity = ((matches / alignLen) * 100).toFixed(2);
+      }
 
       return { a1, a2, middle, matches, mismatches, gaps, alignLen, identity, score: dp[M][N], qLen: M, sLen: N };
-
     }
 
 
@@ -2326,145 +2319,80 @@
         let qOut = '', sOut = '', mOut = '';
 
         for (let k = 0; k < qChunk.length; k++) {
-
           const q = qChunk[k], s = sChunk[k], m = mChunk[k];
-
           if (q === '-' || s === '-') {
-
             qOut += `<span class="gap">${q}</span>`;
-
             sOut += `<span class="gap">${s}</span>`;
-
             mOut += `<span style="color:#fbbf24"> </span>`;
-
           } else if (q === s) {
-
             qOut += `<span class="match">${q}</span>`;
-
             sOut += `<span class="match">${s}</span>`;
-
             mOut += `<span style="color:#6ee7b7">|</span>`;
-
+          } else if (q === 'N' || s === 'N' || m === ':') {
+            qOut += `<span class="ambiguous" style="color:#38bdf8;font-weight:bold;">${q}</span>`;
+            sOut += `<span class="ambiguous" style="color:#38bdf8;font-weight:bold;">${s}</span>`;
+            mOut += `<span style="color:#38bdf8">:</span>`;
           } else {
-
             qOut += `<span class="mismatch">${q}</span>`;
-
             sOut += `<span class="mismatch">${s}</span>`;
-
             mOut += `<span style="color:#f87171">.</span>`;
-
           }
-
         }
-
         return { qOut, sOut, mOut };
-
       }
-
-
 
       let rowsHTML = '';
-
       let pos = 1;
-
       for (let i = 0; i < queryLines.length; i++) {
-
         const { qOut, sOut, mOut } = colourPair(queryLines[i], midLines[i], subjectLines[i]);
-
         const end = pos + queryLines[i].replace(/-/g, '').length - 1;
-
         rowsHTML += `
-
           <div style="margin-bottom:10px;">
-
             <div class="alignment-row">
-
               <span class="alignment-label">Query&nbsp;&nbsp;&nbsp;</span>
-
               <span class="alignment-seq">${qOut}</span>
-
             </div>
-
             <div class="alignment-row">
-
               <span class="alignment-label">&nbsp;</span>
-
               <span class="alignment-middle">${mOut}</span>
-
             </div>
-
             <div class="alignment-row">
-
               <span class="alignment-label">Subject&nbsp;</span>
-
               <span class="alignment-seq">${sOut}</span>
-
             </div>
-
           </div>`;
-
         pos = end + 1;
-
       }
 
-
-
       const identityNum = parseFloat(identity);
-
       const barColour = identityNum >= 90 ? '#34d399' : identityNum >= 70 ? '#fbbf24' : '#f87171';
 
-
-
       return `
-
         <div class="alignment-panel">
-
           <div class="alignment-panel-header">
-
             <h4><i class="fa-solid fa-align-left"></i> Alignment Viewer &mdash; ${regionLabel}</h4>
-
             <div class="alignment-stats">
-
               <div class="alignment-stat">Identity: <span>${identity}%</span></div>
-
               <div class="alignment-stat">E-value: <span>${eValue === 0 ? "0.0" : eValue.toExponential(2)}</span></div>
-
               <div class="alignment-stat">Matches: <span>${matches}</span></div>
-
               <div class="alignment-stat">Mismatches: <span>${mismatches}</span></div>
-
               <div class="alignment-stat">Gaps: <span>${gaps}</span></div>
-
             </div>
-
             <div style="display:flex;align-items:center;gap:10px;">
-
               <div class="identity-bar-wrap">
-
                 <div class="identity-bar-fill" style="width:${identity}%;background:linear-gradient(90deg,${barColour},${barColour}dd);"></div>
-
               </div>
-
               <span style="color:#6ee7b7;font-weight:800;font-size:1.1rem;">${identity}%</span>
-
             </div>
-
           </div>
-
           <div class="alignment-body">${rowsHTML}</div>
-
           <div class="alignment-legend">
-
-            <div class="legend-item"><div class="legend-dot match"></div> Match</div>
-
-            <div class="legend-item"><div class="legend-dot mismatch"></div> Mismatch</div>
-
+            <div class="legend-item"><div class="legend-dot match"></div> Match (|)</div>
+            <div class="legend-item"><div class="legend-dot ambiguous"></div> Ambiguous/N (:)</div>
+            <div class="legend-item"><div class="legend-dot mismatch"></div> Mismatch (.)</div>
             <div class="legend-item"><div class="legend-dot gap"></div> Gap (–)</div>
-
           </div>
-
         </div>`;
-
     }
 
     // State for chunked results pagination
@@ -2475,33 +2403,35 @@
     // 2. Perform Excel Matching / Search logic (Async with animation)
     function performDnaSearch() {
       const scientificName = document.getElementById('scientificNameInput').value.trim().toUpperCase();
-      const rawRbcl = document.getElementById('rbclInput').value.trim().toUpperCase();
-      const rawMatk = document.getElementById('matkInput').value.trim().toUpperCase();
-      const rawIts = document.getElementById('itsInput').value.trim().toUpperCase();
+      const rawRbcl = document.getElementById('rbclInput').value;
+      const rawMatk = document.getElementById('matkInput').value;
+      const rawIts = document.getElementById('itsInput').value;
 
       if (excelDatabase.length === 0) {
         showAlert('Database Not Loaded', 'The plant CSV database has not loaded yet.\nPlease refresh the page or check the CSV file.', '🗄️');
         return;
       }
 
-      if (!scientificName && !rawRbcl && !rawMatk && !rawIts) {
+      // Parse, clean FASTA headers/coordinates, and validate IUPAC nucleotides
+      const parsedRbcl = extractDnaSequence(rawRbcl);
+      const parsedMatk = extractDnaSequence(rawMatk);
+      const parsedIts = extractDnaSequence(rawIts);
+
+      if (!parsedRbcl.isValid || !parsedMatk.isValid || !parsedIts.isValid) {
+        showAlert('Invalid DNA Sequence', 'Invalid characters detected in DNA sequence!\nOnly standard nucleotides (A, T, C, G, U, N) and IUPAC codes are allowed.', '🧬');
+        return;
+      }
+
+      const rbcl = parsedRbcl.sequence;
+      const matk = parsedMatk.sequence;
+      const its = parsedIts.sequence;
+
+      if (!scientificName && !rbcl && !matk && !its) {
         showAlert('Search Criteria Required', 'Please enter at least one search criteria.\nTry entering a Scientific Name or a DNA sequence.', '🔍');
         return;
       }
 
-      // Sequence Validation
-      const invalidRegex = /[^ATCGU\s-]/;
-      if (invalidRegex.test(rawRbcl) || invalidRegex.test(rawMatk) || invalidRegex.test(rawIts)) {
-        showAlert('Invalid DNA Sequence', 'Invalid characters detected in DNA sequence!\nOnly A, T, C, G, U are allowed.', '🧬');
-        return;
-      }
-
-      const rbcl = rawRbcl.replace(/[^ATCGU]/g, '');
-      const matk = rawMatk.replace(/[^ATCGU]/g, '');
-      const its = rawIts.replace(/[^ATCGU]/g, '');
-
       const threshold = parseFloat(document.getElementById('identityThreshold').value);
-      // High-accuracy Global Needleman-Wunsch algorithm with coverage-normalized identity
       const alignFn = needlemanWunsch;
 
       // Show loading spinner & hide previous results while computing
@@ -2544,19 +2474,27 @@
             totalWeight += weight;
 
             const rawVal = getFieldValue(row, keys) || '';
-            const target = String(rawVal).toUpperCase().replace(/[^ATCGU]/g, '');
+            const target = String(rawVal).toUpperCase().replace(/[^ATCGUNRYSWKMBDHV]/g, '');
             if (!target) return;
 
-            const align = alignFn(query, target);
+            // Dual-strand alignment: compare Forward and Reverse Complement, pick best match
+            const fwdAlign = alignFn(query, target);
+            const revQuery = getReverseComplement(query);
+            const revAlign = alignFn(revQuery, target);
+
+            const isRev = (revAlign.score > fwdAlign.score);
+            const align = isRev ? revAlign : fwdAlign;
+            const displayLabel = isRev ? `${label} (RevComp)` : label;
+
             if (align.alignLen > 0) {
               hasAnyAlignment = true;
-              matchedRegions.push(label);
+              matchedRegions.push(displayLabel);
               weightedIdentitySum += parseFloat(align.identity) * weight;
 
               const eVal = calculateEValue(align.score, align.qLen, align.sLen);
               if (eVal < bestEvalue) bestEvalue = eVal;
 
-              alignmentsHTML += buildAlignmentHTML(align, label, eVal);
+              alignmentsHTML += buildAlignmentHTML(align, displayLabel, eVal);
             }
           });
 
