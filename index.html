@@ -3115,6 +3115,10 @@
       const uses            = getFieldValue(row, ['Uses', 'uses', 'commercial', 'economic', 'වාණිජ']) || 'N/A';
       const traditionalUses = getFieldValue(row, ['Traditional Uses (Sri Lanka)', 'traditional uses (sri lanka)', 'traditional uses', 'traditional']) || 'N/A';
       const phytochemicals  = getFieldValue(row, ['Key Phytochemicals', 'key phytochemicals', 'phytochemicals']) || 'N/A';
+      const conservation    = getFieldValue(row, ['Conservation Status', 'conservation status', 'conservation']) || 'N/A';
+      const endemism        = getFieldValue(row, ['Endemism / Native Range', 'endemism / native range', 'endemism']) || 'N/A';
+      const floweringSeason = getFieldValue(row, ['Flowering & Fruiting Season', 'flowering & fruiting season', 'flowering season']) || 'N/A';
+      const voucherCode     = getFieldValue(row, ['Voucher Specimen Code', 'voucher specimen code', 'voucher']) || 'N/A';
       const identityVal     = getFieldValue(row, ['identity']) || '';
 
       const rawImg = getFieldValue(row, ['Plant Images', 'plant images', 'image', 'photo', 'url', 'img', 'ඡායාරූප']);
@@ -3173,6 +3177,16 @@
                   <strong><i class="fa-solid fa-seedling"></i> Plant Type / Growth Form:</strong>
                   <span>${plantType}</span>
                 </div>
+                ${conservation !== 'N/A' ? `
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-shield-heart"></i> Conservation Status:</strong>
+                  <span>${conservation}</span>
+                </div>` : ''}
+                ${endemism !== 'N/A' ? `
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-earth-americas"></i> Endemism / Range:</strong>
+                  <span>${endemism}</span>
+                </div>` : ''}
                 <div class="detail-box full-width">
                   <strong><i class="fa-solid fa-align-left"></i> Plant Description:</strong>
                   <span>${description}</span>
@@ -3201,6 +3215,16 @@
                   <strong><i class="fa-solid fa-mortar-pestle"></i> Traditional Uses (Sri Lanka):</strong>
                   <span>${traditionalUses}</span>
                 </div>
+                ${floweringSeason !== 'N/A' ? `
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-calendar-days"></i> Flowering & Fruiting:</strong>
+                  <span>${floweringSeason}</span>
+                </div>` : ''}
+                ${voucherCode !== 'N/A' ? `
+                <div class="detail-box">
+                  <strong><i class="fa-solid fa-barcode"></i> Voucher Code:</strong>
+                  <span>${voucherCode}</span>
+                </div>` : ''}
                 <div class="detail-box full-width">
                   <strong><i class="fa-solid fa-flask-vial"></i> Key Phytochemicals:</strong>
                   <span>${phytochemicals}</span>
