@@ -22,6 +22,18 @@
 
 
 
+    <!-- Early Theme Initialization to prevent flash of wrong theme -->
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('plant_dna_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var theme = savedTheme ? savedTheme : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- PapaParse library for loading the hosted CSV database -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -48,27 +60,87 @@
 
 
     :root {
-
       --primary-dark: #0f2922;
-
       --primary-medium: #1b4332;
-
       --accent-green: #10b981;
-
       --accent-hover: #059669;
-
       --light-mint: #d1fae5;
-
-      --bg-gradient: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-
-      --surface-color: rgba(255, 255, 255, 0.85);
-
-      --glass-border: rgba(255, 255, 255, 0.6);
-
+      --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+      --surface-color: rgba(255, 255, 255, 0.90);
+      --glass-border: rgba(255, 255, 255, 0.65);
       --text-main: #1f2937;
-
       --text-muted: #4b5563;
+      --header-title: #0f2922;
+      --card-bg: #ffffff;
+      --card-border: #e2e8f0;
+      --card-hover-border: #10b981;
+      --box-bg: #f8fafc;
+      --box-border: #e2e8f0;
+      --box-text: #1f2937;
+      --box-strong: #1b4332;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --input-text: #0f172a;
+      --input-placeholder: #94a3b8;
+      --badge-bg: #d1fae5;
+      --badge-text: #059669;
+      --table-bg: #ffffff;
+      --table-border: #e2e8f0;
+      --table-hover: #f1f5f9;
+      --table-text: #1f2937;
+      --toolbar-bg: #f8fafc;
+      --toolbar-border: #e2e8f0;
+      --toggle-group-bg: #f1f5f9;
+      --toggle-btn-color: #4b5563;
+      --toggle-btn-active-bg: #ffffff;
+      --toggle-btn-active-color: #0f2922;
+      --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.08);
+      --nav-bg: rgba(15, 41, 34, 0.98);
+      --nav-border: rgba(255, 255, 255, 0.08);
+    }
 
+    [data-theme="dark"] {
+      --primary-dark: #34d399;
+      --primary-medium: #6ee7b7;
+      --accent-green: #10b981;
+      --accent-hover: #34d399;
+      --light-mint: rgba(16, 185, 129, 0.18);
+      --bg-gradient: linear-gradient(135deg, #090d16 0%, #0d1520 50%, #060b13 100%);
+      --surface-color: rgba(15, 23, 42, 0.88);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --header-title: #ffffff;
+      --card-bg: #0f172a;
+      --card-border: rgba(255, 255, 255, 0.10);
+      --card-hover-border: #10b981;
+      --box-bg: #1e293b;
+      --box-border: #334155;
+      --box-text: #e2e8f0;
+      --box-strong: #34d399;
+      --input-bg: #1e293b;
+      --input-border: #334155;
+      --input-text: #f8fafc;
+      --input-placeholder: #64748b;
+      --badge-bg: rgba(16, 185, 129, 0.22);
+      --badge-text: #6ee7b7;
+      --table-bg: #0f172a;
+      --table-border: #334155;
+      --table-hover: rgba(30, 41, 59, 0.7);
+      --table-text: #e2e8f0;
+      --toolbar-bg: #0f172a;
+      --toolbar-border: #334155;
+      --toggle-group-bg: #1e293b;
+      --toggle-btn-color: #94a3b8;
+      --toggle-btn-active-bg: #334155;
+      --toggle-btn-active-color: #ffffff;
+      --shadow-sm: 0 4px 15px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.55);
+      --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.7);
+      --nav-bg: rgba(9, 13, 22, 0.96);
+      --nav-border: rgba(16, 185, 129, 0.25);
     }
 
 
@@ -94,33 +166,20 @@
     /* Navbar Styling */
 
     .navbar {
-
       width: 100%;
-
-      background: rgba(15, 41, 34, 0.98);
-
+      background: var(--nav-bg);
       backdrop-filter: blur(12px);
-
       -webkit-backdrop-filter: blur(12px);
-
-      padding: 1rem 2rem;
-
+      padding: 0.85rem 2rem;
       display: flex;
-
       justify-content: space-between;
-
       align-items: center;
-
       position: sticky;
-
       top: 0;
-
       z-index: 1000;
-
-      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+      border-bottom: 1px solid var(--nav-border);
+      transition: background 0.3s ease, border-color 0.3s ease;
     }
 
 
@@ -256,6 +315,108 @@
 
     }
 
+    .nav-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+    }
+
+    /* ── Super Modern Light / Dark Theme Switcher Button ── */
+    .theme-toggle-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      padding: 5px 13px 5px 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      color: #e2e8f0;
+      font-size: 0.88rem;
+      font-weight: 700;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(8px);
+      user-select: none;
+      outline: none;
+    }
+
+    .theme-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .theme-toggle-track {
+      width: 44px;
+      height: 24px;
+      background: #1e293b;
+      border-radius: 999px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .theme-toggle-track .icon-sun {
+      color: #fbbf24;
+      font-size: 11px;
+    }
+
+    .theme-toggle-track .icon-moon {
+      color: #93c5fd;
+      font-size: 11px;
+    }
+
+    .theme-toggle-thumb {
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 18px;
+      height: 18px;
+      background: #ffffff;
+      border-radius: 50%;
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+    }
+
+    .theme-toggle-btn.dark .theme-toggle-thumb {
+      transform: translateX(20px);
+      background: #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+    }
+
+    .theme-toggle-btn.dark .theme-toggle-track {
+      background: #090d16;
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+
+    .theme-toggle-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 0.8rem 1rem;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .nav-right-actions {
+        gap: 0.8rem;
+      }
+      .theme-toggle-label {
+        display: none;
+      }
+    }
+
+
 
 
     /* Main Container & Layout */
@@ -341,7 +502,7 @@
 
     .search-header h2 {
 
-      color: var(--primary-dark);
+      color: var(--header-title);
 
       font-size: 2.2rem;
 
@@ -369,9 +530,9 @@
 
     .db-status-badge {
 
-      background: white;
+      background: var(--card-bg);
 
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--card-border);
 
       padding: 10px 18px;
 
@@ -496,7 +657,7 @@
 
     .db-custom-btn {
 
-      background: #f3f4f6;
+      background: var(--toggle-group-bg);
 
       color: var(--text-main);
 
@@ -526,9 +687,9 @@
 
     .db-custom-btn:hover {
 
-      background: #e5e7eb;
+      background: var(--card-border);
 
-      color: var(--primary-dark);
+      color: var(--accent-hover);
 
     }
 
@@ -615,9 +776,9 @@
 
       align-items: center;
 
-      background: white;
+      background: var(--input-bg);
 
-      border: 2px solid #e5e7eb;
+      border: 2px solid var(--input-border);
 
       border-radius: 14px;
 
@@ -667,7 +828,7 @@
 
     .dna-input::placeholder {
 
-      color: #9ca3af;
+      color: var(--input-placeholder);
 
       font-weight: 500;
 
@@ -725,7 +886,7 @@
 
       align-items: center;
 
-      border-bottom: 2px solid #e5e7eb;
+      border-bottom: 2px solid var(--card-border);
 
       padding-bottom: 1.2rem;
 
@@ -743,7 +904,7 @@
 
       font-size: 1.5rem;
 
-      color: var(--primary-dark);
+      color: var(--header-title);
 
       font-weight: 800;
 
@@ -757,7 +918,7 @@
 
       gap: 10px;
 
-      background: #f3f4f6;
+      background: var(--toggle-group-bg);
 
       padding: 6px;
 
@@ -773,7 +934,7 @@
 
       border: none;
 
-      color: var(--text-muted);
+      color: var(--toggle-btn-color);
 
       padding: 8px 16px;
 
@@ -793,9 +954,9 @@
 
     .toggle-btn.active {
 
-      background: white;
+      background: var(--toggle-btn-active-bg);
 
-      color: var(--primary-dark);
+      color: var(--toggle-btn-active-color);
 
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
@@ -807,13 +968,13 @@
 
     .plant-result-item {
 
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--card-border);
 
       border-radius: 20px;
 
       margin-top: 1.2rem;
 
-      background: white;
+      background: var(--card-bg);
 
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 
@@ -887,7 +1048,7 @@
 
       font-weight: 700;
 
-      color: var(--primary-dark);
+      color: var(--header-title);
 
       white-space: nowrap;
 
@@ -917,9 +1078,9 @@
 
     .expand-btn {
 
-      background: #f3f4f6;
+      background: var(--toggle-group-bg);
 
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--card-border);
 
       border-radius: 10px;
 
@@ -931,7 +1092,7 @@
 
       font-weight: 700;
 
-      color: var(--primary-dark);
+      color: var(--text-main);
 
       display: flex;
 
@@ -1004,7 +1165,7 @@
 
     .plant-body-inner {
 
-      border-top: 2px solid #f3f4f6;
+      border-top: 2px solid var(--card-border);
 
       padding: 1.4rem 1.6rem 1.6rem;
 
@@ -1022,7 +1183,7 @@
 
       margin-bottom: 1.5rem;
 
-      border-bottom: 2px solid #f3f4f6;
+      border-bottom: 2px solid var(--card-border);
 
       padding-bottom: 1.5rem;
 
@@ -1052,7 +1213,7 @@
 
     .plant-title-info h3 {
 
-      color: var(--primary-dark);
+      color: var(--header-title);
 
       font-size: 1.8rem;
 
@@ -1101,9 +1262,10 @@
 
 
     .detail-box {
-      background: #f9fafb;
+      background: var(--box-bg);
       padding: 16px 20px;
       border-radius: 14px;
+      border: 1px solid var(--box-border);
       border-left: 4px solid var(--accent-green);
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -1121,7 +1283,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      color: var(--primary-medium);
+      color: var(--box-strong);
       font-size: 0.85rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -1135,7 +1297,7 @@
     }
 
     .detail-box span {
-      color: var(--text-main);
+      color: var(--box-text);
       font-size: 0.96rem;
       font-weight: 500;
       line-height: 1.6;
@@ -1161,7 +1323,7 @@
 
       border-radius: 16px;
 
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--table-border);
 
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 
@@ -1177,7 +1339,7 @@
 
       border-spacing: 0;
 
-      background: white;
+      background: var(--table-bg);
 
     }
 
@@ -1186,9 +1348,9 @@
     .results-table th,
     .results-table td {
 
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid var(--table-border);
 
-      border-right: 1px solid #e5e7eb;
+      border-right: 1px solid var(--table-border);
 
       padding: 14px 18px;
 
@@ -1249,7 +1411,7 @@
 
     .results-table tbody tr:hover {
 
-      background-color: #f8fafc;
+      background-color: var(--table-hover);
 
     }
 
@@ -1628,7 +1790,7 @@
       display: none;
       text-align: center;
       padding: 3rem 1.5rem;
-      background: rgba(255, 255, 255, 0.9);
+      background: var(--surface-color);
       border-radius: 16px;
       margin-top: 1.5rem;
       box-shadow: 0 10px 30px rgba(0,0,0,0.05);
@@ -1651,7 +1813,7 @@
     .loading-pulse-text {
       font-size: 1.05rem;
       font-weight: 700;
-      color: var(--primary-dark);
+      color: var(--header-title);
       letter-spacing: 0.02em;
     }
     .loading-subtext {
@@ -1938,7 +2100,7 @@
     .gallery-header h2 {
       font-size: 1.6rem;
       font-weight: 800;
-      color: var(--primary-dark);
+      color: var(--header-title);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -1967,8 +2129,8 @@
       flex-wrap: wrap;
       margin-bottom: 2rem;
       padding: 16px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background: var(--toolbar-bg);
+      border: 1px solid var(--toolbar-border);
       border-radius: 16px;
     }
     .gallery-search-wrap {
@@ -1979,11 +2141,11 @@
     .gallery-search-input {
       width: 100%;
       padding: 10px 14px 10px 40px;
-      border: 1.5px solid #cbd5e1;
+      border: 1.5px solid var(--input-border);
       border-radius: 12px;
       font-size: 0.92rem;
       outline: none;
-      background: #ffffff;
+      background: var(--input-bg);
       color: var(--text-main);
       transition: all 0.2s;
     }
@@ -2000,11 +2162,11 @@
     }
     .gallery-select {
       padding: 10px 16px;
-      border: 1.5px solid #cbd5e1;
+      border: 1.5px solid var(--input-border);
       border-radius: 12px;
       font-size: 0.9rem;
       outline: none;
-      background: #ffffff;
+      background: var(--input-bg);
       font-weight: 600;
       color: var(--text-main);
       cursor: pointer;
@@ -2016,7 +2178,7 @@
     .gallery-size-toggles {
       display: flex;
       gap: 4px;
-      background: #e2e8f0;
+      background: var(--toggle-group-bg);
       padding: 4px;
       border-radius: 12px;
     }
@@ -2027,13 +2189,13 @@
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 700;
-      color: #475569;
+      color: var(--toggle-btn-color);
       cursor: pointer;
       transition: all 0.2s;
     }
     .size-btn.active {
-      background: #ffffff;
-      color: var(--primary-dark);
+      background: var(--toggle-btn-active-bg);
+      color: var(--toggle-btn-active-color);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
     }
     .gallery-grid {
@@ -2043,8 +2205,8 @@
       transition: all 0.3s ease;
     }
     .gallery-item-card {
-      background: #ffffff;
-      border: 1.5px solid #e2e8f0;
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
       border-radius: 18px;
       overflow: hidden;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
@@ -2063,7 +2225,7 @@
       height: var(--gallery-img-height);
       position: relative;
       overflow: hidden;
-      background: #f1f5f9;
+      background: var(--box-bg);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2112,7 +2274,7 @@
     .gallery-item-sci {
       font-size: 1.1rem;
       font-weight: 700;
-      color: var(--primary-dark);
+      color: var(--header-title);
       margin-bottom: 4px;
     }
     .gallery-item-sci em {
@@ -2203,7 +2365,7 @@
     .card-footer-report-wrap {
       margin-top: 18px;
       padding-top: 14px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--card-border);
       display: flex;
       justify-content: flex-end;
       align-items: center;
@@ -2486,28 +2648,89 @@
 
     /* Print styles */
     @media print {
-      body * {
-        visibility: hidden !important;
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
       }
-      #printableReportDocument, #printableReportDocument * {
-        visibility: visible !important;
+
+      /* Hide everything in document body except the lab report modal */
+      body > *:not(#labReportModal) {
+        display: none !important;
       }
+
+      #labReportModal {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: none !important;
+        backdrop-filter: none !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+      }
+
+      #labReportModal .report-modal-container {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        transform: none !important;
+        animation: none !important;
+        overflow: visible !important;
+      }
+
+      #labReportModal .report-modal-header {
+        display: none !important;
+      }
+
+      #labReportModal .report-modal-scroll {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+      }
+
       #printableReportDocument {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
+        display: block !important;
+        position: static !important;
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
         box-shadow: none !important;
+        border: none !important;
         border-radius: 0 !important;
         background: #ffffff !important;
         color: #1e293b !important;
       }
+
+      .report-info-card, tr, table {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
       @page {
         size: A4 portrait;
-        margin: 12mm;
+        margin: 10mm 12mm 10mm 12mm;
       }
     }
   </style>
@@ -2602,10 +2825,20 @@
         <span class="brand-subtitle">Ruhuna BST</span>
       </div>
     </a>
-    <ul class="nav-menu">
-      <li><a href="#search" id="navLinkSearch" class="nav-link active" onclick="switchMainTab('search', event)"><i class="fa-solid fa-dna"></i> DNA Search</a></li>
-      <li><a href="#gallery" id="navLinkGallery" class="nav-link" onclick="switchMainTab('gallery', event)"><i class="fa-solid fa-images"></i> Photo Gallery</a></li>
-    </ul>
+    <div class="nav-right-actions">
+      <ul class="nav-menu">
+        <li><a href="#search" id="navLinkSearch" class="nav-link active" onclick="switchMainTab('search', event)"><i class="fa-solid fa-dna"></i> DNA Search</a></li>
+        <li><a href="#gallery" id="navLinkGallery" class="nav-link" onclick="switchMainTab('gallery', event)"><i class="fa-solid fa-images"></i> Photo Gallery</a></li>
+      </ul>
+      <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="Switch Light / Dark Theme" aria-label="Toggle Theme">
+        <div class="theme-toggle-track">
+          <i class="fa-solid fa-sun icon-sun"></i>
+          <i class="fa-solid fa-moon icon-moon"></i>
+          <span class="theme-toggle-thumb"></span>
+        </div>
+        <span class="theme-toggle-label" id="themeToggleText">Light</span>
+      </button>
+    </div>
   </nav>
 
 
@@ -2688,7 +2921,7 @@
       <div style="margin-bottom:1.5rem;">
         <span style="font-size:0.85rem; color:#666; font-weight:700; display:block; margin-bottom:6px;">Minimum Identity Cutoff:</span>
         <select id="identityThreshold"
-          style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid #e5e7eb; outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:#f9fafb; cursor:pointer;">
+          style="width:100%; padding:10px 12px; border-radius:10px; border:2px solid var(--input-border); outline:none; font-family:'Inter'; font-weight:600; color:var(--text-main); background:var(--input-bg); cursor:pointer;">
           <option value="70">70% (Default Filter)</option>
           <option value="90">90% (Strict Match)</option>
           <option value="50">50% (Lenient Match)</option>
@@ -2838,6 +3071,8 @@
 
     // Close on backdrop click or Escape key
     document.addEventListener('DOMContentLoaded', function() {
+      const initialTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      updateThemeButtonUI(initialTheme);
       document.getElementById('customAlertOverlay').addEventListener('click', function(e) {
         if (e.target === this) closeCustomAlert();
       });
@@ -2845,6 +3080,37 @@
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeCustomAlert();
     });
+
+    
+    // ════════════════════════════════════════════════════════════════════
+    //  THEME SWITCHER ENGINE (LIGHT & DARK MODE)
+    // ════════════════════════════════════════════════════════════════════
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try {
+        localStorage.setItem('plant_dna_theme', next);
+      } catch (e) {}
+      updateThemeButtonUI(next);
+    }
+
+    function updateThemeButtonUI(theme) {
+      const btn = document.getElementById('themeToggleBtn');
+      const text = document.getElementById('themeToggleText');
+      if (!btn) return;
+      if (theme === 'dark') {
+        btn.classList.add('dark');
+        btn.setAttribute('aria-checked', 'true');
+        btn.title = 'Switch to Light Theme';
+        if (text) text.textContent = 'Dark';
+      } else {
+        btn.classList.remove('dark');
+        btn.setAttribute('aria-checked', 'false');
+        btn.title = 'Switch to Dark Theme';
+        if (text) text.textContent = 'Light';
+      }
+    }
 
     let excelDatabase = [];
 
@@ -4213,17 +4479,53 @@
         }
       }
 
+      // Create an isolated offscreen wrapper with zero scroll / zero top offset
+      const wrapper = document.createElement('div');
+      wrapper.id = 'pdfExportWrapper';
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
+      wrapper.style.left = '0';
+      wrapper.style.width = '794px';
+      wrapper.style.zIndex = '-999999';
+      wrapper.style.background = '#ffffff';
+      wrapper.style.margin = '0';
+      wrapper.style.padding = '0';
+      wrapper.style.overflow = 'visible';
+
+      const clone = element.cloneNode(true);
+      clone.style.margin = '0';
+      clone.style.padding = '18px 24px';
+      clone.style.boxShadow = 'none';
+      clone.style.borderRadius = '0';
+      clone.style.width = '794px';
+      clone.style.maxWidth = '794px';
+      clone.style.background = '#ffffff';
+      clone.style.color = '#1e293b';
+
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
       const opt = {
-        margin:       [10, 10, 10, 10],
+        margin:       [8, 8, 8, 8],
         filename:     `Ruhuna_BST_Lab_Report_${safeName}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas:  {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollY: 0,
+          scrollX: 0,
+          windowWidth: 794,
+          y: 0,
+          x: 0
+        },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       try {
         if (typeof html2pdf !== 'undefined') {
-          await html2pdf().set(opt).from(element).save();
+          await html2pdf().set(opt).from(clone).save();
         } else {
           window.print();
         }
@@ -4231,6 +4533,9 @@
         console.error('html2pdf generation error, falling back to print:', err);
         window.print();
       } finally {
+        if (wrapper && wrapper.parentNode) {
+          wrapper.parentNode.removeChild(wrapper);
+        }
         btn.innerHTML = origHtml;
         btn.disabled = false;
       }
